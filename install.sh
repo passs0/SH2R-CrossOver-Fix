@@ -121,6 +121,7 @@ with open(p, "wb") as f:
 fi
 
 # 6. Clean unneeded crash/temp logs in the bottle
+setopt NULL_GLOB
 rm -rf "$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/Logs" \
        "$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/Config/CrashReportClient" \
        "$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/Temp/"* 2>/dev/null || true
