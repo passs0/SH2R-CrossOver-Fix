@@ -40,15 +40,20 @@ SH2_EXE="$SH2_WIN64_DIR/SHProto-Win64-Shipping.exe"
 
 echo "✅ Found Silent Hill 2 Remake in bottle: $BOTTLE_NAME"
 
-# 1. Install focus_and_hide_cursor.sh & ensure ROSETTA_ADVERTISE_AVX=1 in cxbottle.conf
+# 1. Build and install sh2_focus helper & ensure ROSETTA_ADVERTISE_AVX=1 in cxbottle.conf
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if command -v clang >/dev/null 2>&1; then
+  clang -O2 -framework Cocoa -framework Carbon -Wno-deprecated-declarations \
+    "$SCRIPT_DIR/src/sh2_focus.m" -o "$TARGET_BOTTLE/sh2_focus"
+  chmod +x "$TARGET_BOTTLE/sh2_focus"
+fi
 cp "$SCRIPT_DIR/scripts/focus_and_hide_cursor.sh" "$TARGET_BOTTLE/focus_and_hide_cursor.sh"
 chmod +x "$TARGET_BOTTLE/focus_and_hide_cursor.sh"
 if [[ -f "$TARGET_BOTTLE/cxbottle.conf" ]] && ! grep -q '"ROSETTA_ADVERTISE_AVX"' "$TARGET_BOTTLE/cxbottle.conf"; then
   sed -i '' 's/\[EnvironmentVariables\]/[EnvironmentVariables]\
 "ROSETTA_ADVERTISE_AVX" = "1"/' "$TARGET_BOTTLE/cxbottle.conf"
 fi
-echo "✅ Installed focus_and_hide_cursor.sh and verified ROSETTA_ADVERTISE_AVX=1"
+echo "✅ Installed native sh2_focus helper, focus_and_hide_cursor.sh, and verified ROSETTA_ADVERTISE_AVX=1"
 
 # 2. Configure cxmenu.conf with Type = raw and -dx11 SAVEWINPOS=1
 ICON_PATH=$(find "$TARGET_BOTTLE/windata/cxmenu/icons/hicolor/256x256" -name "*goggame-2051029707*.png" 2>/dev/null | head -n 1)

@@ -61,8 +61,9 @@ chmod +x install.sh
 
 ## 📁 Repository Structure
 
-- [`install.sh`](install.sh) — One-step installer that configures `cxmenu.conf`, updates `cxmenu_macosx.plist` via CrossOver's native `cxmenu --install`, updates `.lnk` wrappers, applies the 60 FPS frame-pacing cap, and cleans temporary/crash logs.
-- [`scripts/focus_and_hide_cursor.sh`](scripts/focus_and_hide_cursor.sh) — Background helper that waits for the `SHProto-Win64-Shipping.exe` window, hides `Menu Helper`, brings the game to the front, and hides the macOS cursor.
+- [`install.sh`](install.sh) — One-step installer that compiles `src/sh2_focus.m`, configures `cxmenu.conf`, updates `cxmenu_macosx.plist` via CrossOver's native `cxmenu --install`, updates `.lnk` wrappers, applies the 60 FPS frame-pacing cap, and cleans temporary/crash logs.
+- [`src/sh2_focus.m`](src/sh2_focus.m) — Native compiled Cocoa/Carbon helper that monitors for the game's layer-0 window, hides `CrossOver.app` and `Menu Helper`, brings the game process to the foreground, activates it via window click, and hides the macOS cursor.
+- [`scripts/focus_and_hide_cursor.sh`](scripts/focus_and_hide_cursor.sh) — Shell wrapper that invokes the native `sh2_focus` binary (or falls back to AppleScript).
 
 ---
 
