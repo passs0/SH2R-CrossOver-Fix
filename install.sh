@@ -47,10 +47,10 @@ chmod +x "$TARGET_BOTTLE/focus_and_hide_cursor.sh"
 echo "✅ Installed focus_and_hide_cursor.sh"
 
 # 2. Configure cxmenu.conf with Type = raw and -dx11 SAVEWINPOS=1
-ICON_PATH=$(find "$TARGET_BOTTLE/windata/cxmenu/icons" -name "*goggame-2051029707*.png" 2>/dev/null | head -n 1)
+ICON_PATH=$(find "$TARGET_BOTTLE/windata/cxmenu/icons/hicolor/256x256" -name "*goggame-2051029707*.png" 2>/dev/null | head -n 1)
 [[ -z "$ICON_PATH" ]] && ICON_PATH="2BF3_goggame-2051029707.0"
 
-RAW_CMD="sh -c 'sh \"$TARGET_BOTTLE/focus_and_hide_cursor.sh\" & cd \"$SH2_WIN64_DIR\" && exec \"$CX_BIN/wine\" --bottle \"$BOTTLE_NAME\" --check --wait-children \"$SH2_EXE\" SHProto -dx11 SAVEWINPOS=1'"
+RAW_CMD="sh -c 'sh \\\"$TARGET_BOTTLE/focus_and_hide_cursor.sh\\\" & cd \\\"$SH2_WIN64_DIR\\\" && exec \\\"$CX_BIN/wine\\\" --bottle \\\"$BOTTLE_NAME\\\" --check --wait-children \\\"$SH2_EXE\\\" SHProto -dx11 SAVEWINPOS=1'"
 
 cat > "$TARGET_BOTTLE/cxmenu.conf" <<EOF
 [StartMenu.C^3A_ProgramData_Microsoft_Windows_Start+Menu/Programs/Silent Hill 2 [GOG.com]/Silent Hill 2.lnk]
