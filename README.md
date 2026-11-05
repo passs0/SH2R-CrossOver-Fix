@@ -31,6 +31,10 @@ When launching *Silent Hill 2 Remake* from CrossOver or its macOS `.app` shortcu
 - **Shader Cache Preservation:** Modifies only `FpsCap=Fps60` and `FrameRateLimit=60.000000` in `GameUserSettings.ini` (preserving Windows `CRLF` line endings) without altering scalability group CVars that would force Unreal Engine 5 to recompile shaders mid-level.
 - **In-Game Video Cutscenes (`winegstreamer`):** For FMV cutscenes that freeze due to stock CrossOver missing `libgstlibav.dylib` (FFmpeg), pair this fix with **[HexAid](https://github.com/passs0/HexAid)** to upgrade CrossOver's `GStreamer.framework` and `DXMT` in place.
 
+### 3. Persistent "Select a Profile" Prompt on Standalone/Offline Launches
+When launching the GOG version directly through CrossOver shortcuts without the GOG Galaxy client running in the background, Unreal Engine fails its online identity handshake (which defaults to checking Steam/Galaxy). This causes the game to pause at the start screen on **every single boot** prompting you to "Select a Profile" before it will load your saves.
+- **How it's resolved:** `install.sh` adds `DefaultPlatformService=Null` and `bAutoLogin=true` under `[OnlineSubsystem]` in your bottle's `Engine.ini`. This bypasses online storefront handshakes, auto-authenticates the local player profile, and loads your transferred save games immediately.
+
 ---
 
 ## 🛠️ Troubleshooting & Known Edge Cases

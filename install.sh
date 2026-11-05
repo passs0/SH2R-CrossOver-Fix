@@ -125,7 +125,26 @@ with open(p, "wb") as f:
   echo "✅ Applied 60 FPS frame pacing cap in GameUserSettings.ini (existing shader cache preserved)"
 fi
 
-# 6. Clean unneeded crash/temp logs in the bottle
+# 6. Bypass "Select a Profile" prompt on launch when playing offline without GOG Galaxy
+ENGINE_INI="$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/Config/Windows/Engine.ini"
+if [[ -f "$ENGINE_INI" ]] && ! grep -q '\[OnlineSubsystem\]' "$ENGINE_INI"; then
+  cat >> "$ENGINE_INI" <<'EOF'
+
+[OnlineSubsystem]
+DefaultPlatformService=Null
+bAutoLogin=true
+
+[OnlineSubsystemSteam]
+bEnabled=false
+
+[OnlineSubsystemGOG]
+bEnabled=false
+bRequireBackendAuthorization=false
+EOF
+  echo "✅ Configured offline profile auto-login in Engine.ini (bypasses 'Select a Profile')"
+fi
+
+# 7. Clean unneeded crash/temp logs in the bottle
 setopt NULL_GLOB
 rm -rf "$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/Logs" \
        "$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/Config/CrashReportClient" \
