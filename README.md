@@ -33,6 +33,19 @@ When launching *Silent Hill 2 Remake* from CrossOver or its macOS `.app` shortcu
 
 ---
 
+## 🛠️ Troubleshooting & Known Edge Cases
+
+### "The command ... returned 5" / Immediate Crash on Launch (`0xc0000005`)
+
+If the game crashes instantly upon launch with return code `5`:
+
+1. **Rosetta AVX Advertisement:** Unreal Engine 5 requires AVX instructions. `install.sh` automatically adds `"ROSETTA_ADVERTISE_AVX" = "1"` under `[EnvironmentVariables]` in your bottle's `cxbottle.conf`.
+2. **Apple GPTK Version Mismatch:** If you manually upgrade CrossOver's Apple Game Porting Toolkit (GPTK) binaries in `CrossOver.app/Contents/SharedSupport/CrossOver/lib64/apple_gptk/`:
+   - Updating `external/D3DMetal.framework` and `external/libd3dshared.dylib` **requires** also updating the companion Wine bridge DLLs in `apple_gptk/wine/x86_64-windows/` (`d3d11.dll`, `d3d12.dll`, `dxgi.dll`, etc.) from the **exact same** GPTK release DMG (`redist/lib/wine/x86_64-windows/`).
+   - Mismatched versions will shift the internal `_gGFXTDispatch` table offset, causing `d3d11.dll` to jump into an invalid function pointer and crash with `EXCEPTION_ACCESS_VIOLATION` (`0xc0000005`) during `DllMain`.
+
+---
+
 ## 🚀 Installation
 
 ```zsh
