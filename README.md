@@ -4,6 +4,13 @@
   <strong>Launch, Window Auto-Focus, Cursor Hide & Frame-Pacing Fix for <em>Silent Hill 2 Remake (GOG)</em> on CrossOver macOS (Apple Silicon)</strong>
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/macOS-Apple%20Silicon-black?logo=apple" alt="macOS" />
+  <img src="https://img.shields.io/badge/target-CrossOver%20%7C%20Silent%20Hill%202%20Remake-007AFF" alt="Target" />
+  <img src="https://img.shields.io/badge/framework-Cocoa%20%7C%20Shell-blue" alt="Frameworks" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" /></a>
+</p>
+
 ---
 
 > [!NOTE]
