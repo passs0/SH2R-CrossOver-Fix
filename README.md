@@ -75,6 +75,38 @@ chmod +x install.sh
 - [`install.sh`](install.sh) — One-step installer that compiles `src/sh2_focus.m`, configures `cxmenu.conf`, updates `cxmenu_macosx.plist` via CrossOver's native `cxmenu --install`, updates `.lnk` wrappers, applies the 60 FPS frame-pacing cap, and cleans temporary/crash logs.
 - [`src/sh2_focus.m`](src/sh2_focus.m) — Native compiled Cocoa/Carbon helper that monitors for the game's layer-0 window, hides `CrossOver.app` and `Menu Helper`, brings the game process to the foreground, activates it via window click, and hides the macOS cursor.
 - [`scripts/focus_and_hide_cursor.sh`](scripts/focus_and_hide_cursor.sh) — Shell wrapper that invokes the native `sh2_focus` binary (or falls back to AppleScript).
+- [`scripts/sh2_cheat.py`](scripts/sh2_cheat.py) — Standalone offline save modifier CLI to view game stats and toggle infinite ammo, healing items, NG+ Chainsaw, and difficulty options.
+
+---
+
+## 🧰 Optional Companion Tool: Offline Save Modifier (Cheats)
+
+Windows memory trainers (*Cheat Engine*, *FLiNG*, *WeMod*) often fail, crash, or freeze under Wine/CrossOver due to restricted macOS debugging entitlements and DXMT/Metal memory conflicts.
+
+Included in [`scripts/sh2_cheat.py`](scripts/sh2_cheat.py) is a **standalone, zero-dependency offline save modifier** written in pure Python 3. It directly parses Unreal Engine 5's compressed `VASb` / `YDBx` GVAS save container and repacks it cleanly while preserving exact byte alignment and generating automatic timestamped backups.
+
+### Features
+- 🔫 **Infinite Ammo**: Sets Handgun, Shotgun, and Hunting Rifle ammo to 9,999.
+- ❤️ **Infinite Healing**: Sets Health Drinks and Syringes to 999.
+- 🪚 **NG+ Chainsaw Early Access**: Safely swaps the Iron Pipe for the Chainsaw in inventory.
+- ⚔️ **Pyramid Head Control**: Toggle Pyramid Head between normal aggressive mode and pacified ignore mode.
+- 🛡️ **Automatic Safety Backups**: Creates `.sav.bak_<timestamp>` before making changes; one-command rollback with `--restore`.
+
+### Usage
+
+```zsh
+# View current save file stats and inventory
+python3 scripts/sh2_cheat.py --status
+
+# Interactive menu to toggle individual cheats
+python3 scripts/sh2_cheat.py
+
+# Instant one-click apply to latest save
+python3 scripts/sh2_cheat.py --apply
+
+# Restore previous backup
+python3 scripts/sh2_cheat.py --restore
+```
 
 ---
 
