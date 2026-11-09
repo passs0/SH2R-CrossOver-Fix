@@ -57,13 +57,13 @@ def read_decompressed(save_path):
     with open(save_path, "rb") as f:
         raw_data = f.read()
 
-    ydbx_idx = raw_data.find(b"\x00\x01YDBx")
+    ydbx_idx = raw_data.find(b"YDBx")
     if ydbx_idx == -1:
         raise ValueError("Invalid save format: Missing YDBx container.")
 
-    comp_len = struct.unpack("<I", raw_data[ydbx_idx+6:ydbx_idx+10])[0]
-    uncomp_len = struct.unpack("<I", raw_data[ydbx_idx+10:ydbx_idx+14])[0]
-    zlib_start = ydbx_idx + 14
+    comp_len = struct.unpack("<I", raw_data[ydbx_idx+4:ydbx_idx+8])[0]
+    uncomp_len = struct.unpack("<I", raw_data[ydbx_idx+8:ydbx_idx+12])[0]
+    zlib_start = ydbx_idx + 12
 
     decomp = bytearray(zlib.decompress(raw_data[zlib_start:zlib_start+comp_len]))
     if len(decomp) != uncomp_len:
@@ -78,7 +78,7 @@ def write_repacked(save_path, raw_data, ydbx_idx, decomp):
     shutil.copy2(save_path, backup_path)
 
     new_comp = zlib.compress(bytes(decomp), level=zlib.Z_DEFAULT_COMPRESSION)
-    header = raw_data[:ydbx_idx+6]
+    header = raw_data[:ydbx_idx+4]
     repacked = (
         header +
         struct.pack("<I", len(new_comp)) +
