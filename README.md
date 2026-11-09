@@ -107,28 +107,23 @@ Windows memory trainers (*Cheat Engine*, *FLiNG*, *WeMod*) often fail, crash, or
 Included in [`scripts/sh2_cheat.py`](scripts/sh2_cheat.py) is a **standalone, zero-dependency offline save modifier and item injector** written in pure Python 3. It directly parses Unreal Engine 5's compressed `VASb` / `YDBx` GVAS save container and repacks it cleanly while preserving exact byte alignment and generating automatic timestamped backups.
 
 ### Features
-- 🛡️ **Progression Protection Guard**: Unreal Engine 5 uses asynchronous level streaming. Injecting key items or memos belonging to zones that haven't been streamed into memory yet (e.g. Prison or Lakeview Hotel items into Brookhaven Hospital) causes fatal `EXCEPTION_ACCESS_VIOLATION` crashes (`0x142ac006e`). The built-in Progression Guard automatically filters injections to safe limits for your current story tier.
+- 🛡️ **Progression Protection Guard**: Unreal Engine 5 uses asynchronous level streaming. Key puzzle items and out-of-sequence story objects cannot be injected safely into saves without causing fatal `EXCEPTION_ACCESS_VIOLATION` crashes (`0x142ac006e`). Dangerous key item injection has been permanently stripped to guarantee 100% save stability.
 - 🔫 **Infinite Ammo**: Sets Handgun, Shotgun, and Hunting Rifle ammo to 9,999.
 - ❤️ **Infinite Healing**: Sets Health Drinks and Syringes to 999; restores player HP to 100%.
 - 🪚 **NG+ Chainsaw Early Access**: Safely equip the Chainsaw in inventory or revert to the Iron Pipe.
-- 📖 **100% Archivist Trophy (All 70 Memos)**: Injects all 70 notes and documents across both regular and New Game+ playthroughs into the memo tracker, inventory, and skip-investigation lists.
-- 👁️ **100% Echoes Trophy (All 26 Glimpses)**: Injects all 26 environmental flashback GUIDs from the 2001 classic.
-- 🔑 **Complete Ending Items**: Injects key items for all 8 game endings (Rebirth, Dog, UFO, Bliss, Stillness, Leave, Maria, In Water).
-- 📷 **All 26 Strange Photos**: Injects all photos for the *Pieces Unarranged* trophy.
-- 🔍 **Custom & Granular Injections**: Selectively inject individual memos, glimpses, ending packs, or any arbitrary item row name and quantity.
-- 🛡️ **Safe & Opt-in**: All cheats and injections are toggled **OFF by default** in the interactive menu; creates automatic `.sav.bak_<timestamp>` backups before making any changes.
+- 📖 **Archivist Trophy (Memos)**: View memo completion progress across playthroughs.
+- 👁️ **Echoes Trophy (Glimpses)**: Track environmental flashback discovery from the 2001 classic.
+- 📷 **Strange Photos**: Inspect and track collected polaroids for the *Pieces Unarranged* trophy.
+- 🛡️ **Safe & Opt-in**: All cheats are toggled **OFF by default** in the interactive menu; creates automatic `.sav.bak_<timestamp>` backups before making any changes.
 
 ### Usage
 
 ```zsh
-# View current save file stats, collectibles, and ending readiness
+# View current save file stats, inventory, and collectibles
 python3 scripts/sh2_cheat.py --status
 
 # Interactive menu (all toggles OFF by default, select what you want)
 python3 scripts/sh2_cheat.py
-
-# Inject all collectibles & ending items
-python3 scripts/sh2_cheat.py --all-memos --all-glimpses --all-endings
 
 # Inject max firepower (9,999 ammo + 999 healing + Chainsaw)
 python3 scripts/sh2_cheat.py --ammo --health --max-hp --chainsaw

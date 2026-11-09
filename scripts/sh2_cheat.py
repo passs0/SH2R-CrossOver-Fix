@@ -638,11 +638,9 @@ def apply_cheats(
     chainsaw=None,
     all_memos=False,
     all_glimpses=False,
-    all_endings=False,
     all_photos=False,
     max_safe=False,
     guard=True,
-    custom_items=None,
     custom_memos=None,
     custom_glimpses=None,
 ):
@@ -684,14 +682,7 @@ def apply_cheats(
                 ok, _ = inject_glimpse(decomp, guid, max_tier=tier)
                 if ok: g_added += 1
 
-        e_added = 0
-        for cat, items in ENDING_ITEMS.items():
-            for item_id, _ in items:
-                if get_item_tier(item_id) <= tier:
-                    ok, _ = inject_collected_item(decomp, item_id, quantity=1, max_tier=tier)
-                    if ok: e_added += 1
-
-        print(f"  ✅ Safe Injections Complete: +{m_added} Memos, +{g_added} Glimpses, +{e_added} Key Items")
+        print(f"  ✅ Safe Injections Complete: +{m_added} Memos, +{g_added} Glimpses")
         changes_made += 1
 
     if ammo:
@@ -743,28 +734,11 @@ def apply_cheats(
         print(f"  👁️  Glimpses of the Past           : {count} Injected ({skipped} skipped by guard) [APPLIED]")
         changes_made += 1
 
-    if all_endings:
-        count = 0
-        skipped = 0
-        for cat, items in ENDING_ITEMS.items():
-            for item_id, _ in items:
-                ok, _ = inject_collected_item(decomp, item_id, quantity=1, max_tier=effective_guard_tier)
-                if ok: count += 1
-                else: skipped += 1
-        print(f"  🔑  Key & Ending Items             : {count} Injected ({skipped} skipped by guard) [APPLIED]")
-        changes_made += 1
-
     if all_photos:
         for p in ALL_STRANGE_PHOTOS:
             inject_collected_item(decomp, p, quantity=1, max_tier=effective_guard_tier)
         print("  📷  Strange Photos                 : Injected [APPLIED]")
         changes_made += 1
-
-    if custom_items:
-        for item_name, qty in custom_items:
-            ok, msg = inject_collected_item(decomp, item_name, quantity=qty, max_tier=effective_guard_tier)
-            print(f"  📦  Custom Item                    : {msg} [APPLIED]")
-            changes_made += 1
 
     if custom_memos:
         for memo_name in custom_memos:
@@ -789,26 +763,21 @@ def apply_cheats(
     return bak
 
 def sub_menu_custom_injections():
-    custom_items = []
     custom_memos = []
     custom_glimpses = []
 
     while True:
         print("\n" + "=" * 52)
-        print("   🔍 CUSTOM ITEM / MEMO / GLIMPSE INJECTOR")
+        print("   🔍 CUSTOM MEMO & GLIMPSE INJECTOR")
         print("=" * 52)
         print("SELECT INJECTION TYPE:")
-        print("  [1] Inject Specific Ending Pack (Rebirth, Dog, UFO, Bliss, Stillness)")
-        print("  [2] Select Individual Memo from Catalog (70 available)")
-        print("  [3] Select Individual Glimpse from Catalog (26 available)")
-        print("  [4] Type Exact Item Row Name to Inject")
-        print("  [5] Type Exact Memo Row Name to Inject")
+        print("  [1] Select Individual Memo from Catalog (70 available)")
+        print("  [2] Select Individual Glimpse from Catalog (26 available)")
+        print("  [3] Type Exact Memo Row Name to Inject")
         print("  [B] Back to Main Menu")
         print("-" * 52)
-        if custom_items or custom_memos or custom_glimpses:
+        if custom_memos or custom_glimpses:
             print("QUEUED CUSTOM INJECTIONS:")
-            for i, q in custom_items:
-                print(f"  • Item: {i} (x{q})")
             for m in custom_memos:
                 print(f"  • Memo: {m}")
             for g in custom_glimpses:
@@ -823,17 +792,6 @@ def sub_menu_custom_injections():
         if ch in ("", "B"):
             break
         elif ch == "1":
-            print("\nSelect Ending Pack:")
-            cats = list(ENDING_ITEMS.keys())
-            for idx, c in enumerate(cats, 1):
-                print(f"  [{idx}] {c}")
-            sel = input("Enter choice: ").strip()
-            if sel.isdigit() and 1 <= int(sel) <= len(cats):
-                chosen_cat = cats[int(sel)-1]
-                for item_id, item_label in ENDING_ITEMS[chosen_cat]:
-                    custom_items.append((item_id, 1))
-                print(f"✅ Added items for {chosen_cat}")
-        elif ch == "2":
             filter_str = input("\nEnter search filter for memos (or press Enter for all): ").strip().lower()
             filtered = [m for m in ALL_MEMOS if filter_str in m.lower()]
             for idx, m in enumerate(filtered[:20], 1):
@@ -844,7 +802,7 @@ def sub_menu_custom_injections():
             if sel.isdigit() and 1 <= int(sel) <= min(20, len(filtered)):
                 custom_memos.append(filtered[int(sel)-1])
                 print(f"✅ Queued memo: {filtered[int(sel)-1]}")
-        elif ch == "3":
+        elif ch == "2":
             print("\nGlimpses Catalog (1-26):")
             for idx, (guid, desc) in enumerate(ALL_GLIMPSES, 1):
                 print(f"  [{idx:02d}] {desc}")
@@ -852,20 +810,13 @@ def sub_menu_custom_injections():
             if sel.isdigit() and 1 <= int(sel) <= len(ALL_GLIMPSES):
                 custom_glimpses.append(ALL_GLIMPSES[int(sel)-1][0])
                 print(f"✅ Queued: {ALL_GLIMPSES[int(sel)-1][1]}")
-        elif ch == "4":
-            name = input("\nEnter exact item row name: ").strip()
-            if name:
-                qty_str = input("Enter quantity [1]: ").strip()
-                qty = int(qty_str) if qty_str.isdigit() and int(qty_str) > 0 else 1
-                custom_items.append((name, qty))
-                print(f"✅ Queued item: {name} (x{qty})")
-        elif ch == "5":
+        elif ch == "3":
             name = input("\nEnter exact memo row name: ").strip()
             if name:
                 custom_memos.append(name)
                 print(f"✅ Queued memo: {name}")
 
-    return custom_items, custom_memos, custom_glimpses
+    return custom_memos, custom_glimpses
 
 def interactive_cli(save_path):
     opt_ammo = False
@@ -874,11 +825,9 @@ def interactive_cli(save_path):
     opt_chainsaw = False
     opt_all_memos = False
     opt_all_glimpses = False
-    opt_all_endings = False
     opt_all_photos = False
     opt_guard = True
 
-    queued_items = []
     queued_memos = []
     queued_glimpses = []
 
@@ -899,12 +848,11 @@ def interactive_cli(save_path):
         print(f"  [4] Equip NG+ Chainsaw                       : [{'ON' if opt_chainsaw else 'OFF'}]")
         print(f"  [5] Inject Memos (Archivist Trophy)          : [{'ON' if opt_all_memos else 'OFF'}]")
         print(f"  [6] Inject Glimpses of the Past (Echoes)     : [{'ON' if opt_all_glimpses else 'OFF'}]")
-        print(f"  [7] Inject Key & Ending Items                : [{'ON' if opt_all_endings else 'OFF'}]")
-        print(f"  [8] Inject Strange Photos                    : [{'ON' if opt_all_photos else 'OFF'}]")
-        print(f"  [9] Custom Item / Memo / Glimpse Selector... ({len(queued_items) + len(queued_memos) + len(queued_glimpses)} queued)")
+        print(f"  [7] Inject Strange Photos                    : [{'ON' if opt_all_photos else 'OFF'}]")
+        print(f"  [8] Custom Memo / Glimpse Selector...        : ({len(queued_memos) + len(queued_glimpses)} queued)")
         print(f"  [0] Toggle Progression Guard                 : [{'ENABLED (Safe)' if opt_guard else 'DISABLED (Warning: Can Crash)'}]")
         print("\nQUICK ACTIONS:")
-        print("  [S] Maximize Safe Progression (Inject all safe items/memos for current area)")
+        print("  [S] Maximize Safe Progression (Safe memos/glimpses/ammo for current area)")
         print("  [A] Apply Selected Cheats to Save")
         print("  [R] Restore Latest Backup")
         print("  [Q] Quit")
@@ -928,10 +876,8 @@ def interactive_cli(save_path):
                 chainsaw=True if opt_chainsaw else None,
                 all_memos=opt_all_memos,
                 all_glimpses=opt_all_glimpses,
-                all_endings=opt_all_endings,
                 all_photos=opt_all_photos,
                 guard=opt_guard,
-                custom_items=queued_items,
                 custom_memos=queued_memos,
                 custom_glimpses=queued_glimpses,
             )
@@ -949,14 +895,11 @@ def interactive_cli(save_path):
         elif choice == "6":
             opt_all_glimpses = not opt_all_glimpses
         elif choice == "7":
-            opt_all_endings = not opt_all_endings
-        elif choice == "8":
             opt_all_photos = not opt_all_photos
         elif choice == "0":
             opt_guard = not opt_guard
-        elif choice == "9":
-            items, memos, glimpses = sub_menu_custom_injections()
-            queued_items.extend(items)
+        elif choice == "8":
+            memos, glimpses = sub_menu_custom_injections()
             queued_memos.extend(memos)
             queued_glimpses.extend(glimpses)
         elif choice == "R":
@@ -985,17 +928,15 @@ Injecting items ahead of your story progress with --no-guard WILL cause game cra
     parser.add_argument("--max-safe", action="store_true", help="Inject maximum safe memos, echoes, and items for current location")
     parser.add_argument("--ammo", action="store_true", help="Set 9,999 ammo for unlocked weapons")
     parser.add_argument("--health", action="store_true", help="Set 999 Health Drinks and Syringes")
-    parser.add_argument("--max-hp", action="store_true", help="Restore player HP to 100%")
+    parser.add_argument("--max-hp", action="store_true", help="Restore player HP to 100%%")
     parser.add_argument("--chainsaw", action="store_true", help="Equip NG+ Chainsaw")
     parser.add_argument("--pipe", action="store_true", help="Revert melee weapon to Iron Pipe")
     parser.add_argument("--all-memos", action="store_true", help="[CAUTION] Inject Memos (can crash if world actors are unloaded)")
     parser.add_argument("--all-glimpses", action="store_true", help="[CAUTION] Inject Glimpses of the Past (can crash if world actors are unloaded)")
-    parser.add_argument("--all-endings", action="store_true", help="Inject Key & Ending Items (filtered by Progression Guard)")
     parser.add_argument("--all-photos", action="store_true", help="Inject Strange Photos (filtered by Progression Guard)")
     parser.add_argument("--no-guard", "--force", action="store_true", help="Disable Progression Guard (Warning: premature items may crash game)")
     parser.add_argument("--inject-memo", type=str, help="Inject specific memo by row name")
     parser.add_argument("--inject-glimpse", type=str, help="Inject specific glimpse by index (1-26) or 32-char GUID")
-    parser.add_argument("--inject-item", nargs=2, metavar=("NAME", "QTY"), help="Inject any item row name and quantity")
 
     args = parser.parse_args()
 
@@ -1018,12 +959,9 @@ Injecting items ahead of your story progress with --no-guard WILL cause game cra
         print_status(save_path)
         return
 
-    custom_items = []
     custom_memos = []
     custom_glimpses = []
 
-    if args.inject_item:
-        custom_items.append((args.inject_item[0], int(args.inject_item[1])))
     if args.inject_memo:
         custom_memos.append(args.inject_memo)
     if args.inject_glimpse:
@@ -1042,9 +980,7 @@ Injecting items ahead of your story progress with --no-guard WILL cause game cra
         args.pipe,
         args.all_memos,
         args.all_glimpses,
-        args.all_endings,
         args.all_photos,
-        custom_items,
         custom_memos,
         custom_glimpses,
     ])
@@ -1059,11 +995,9 @@ Injecting items ahead of your story progress with --no-guard WILL cause game cra
             chainsaw=chainsaw_val,
             all_memos=args.all_memos,
             all_glimpses=args.all_glimpses,
-            all_endings=args.all_endings,
             all_photos=args.all_photos,
             max_safe=args.max_safe,
             guard=not args.no_guard,
-            custom_items=custom_items,
             custom_memos=custom_memos,
             custom_glimpses=custom_glimpses,
         )
