@@ -289,18 +289,31 @@ def get_weapon_status(decomp):
 def set_weapon(decomp, to_chainsaw=True):
     pipe = b"\t\x00\x00\x00IronPipe\x00"
     saw = b"\t\x00\x00\x00Chainsaw\x00"
-    from_pat = pipe if to_chainsaw else saw
-    to_pat = saw if to_chainsaw else pipe
 
-    if from_pat in decomp:
-        pos = 0
-        while True:
-            pos = decomp.find(from_pat, pos)
-            if pos == -1:
-                break
-            decomp[pos:pos+len(from_pat)] = to_pat
-            pos += len(to_pat)
-        return True
+    if to_chainsaw:
+        # If Chainsaw is already in inventory, keep both without duplicating
+        if saw in decomp:
+            return True
+        if pipe in decomp:
+            pos = 0
+            while True:
+                pos = decomp.find(pipe, pos)
+                if pos == -1:
+                    break
+                decomp[pos:pos+len(pipe)] = saw
+                pos += len(saw)
+            return True
+    else:
+        # Revert Chainsaw to Iron Pipe
+        if saw in decomp:
+            pos = 0
+            while True:
+                pos = decomp.find(saw, pos)
+                if pos == -1:
+                    break
+                decomp[pos:pos+len(saw)] = pipe
+                pos += len(pipe)
+            return True
     return False
 
 def make_collected_item_struct(item_name, quantity=1):
