@@ -115,7 +115,7 @@ EOF
 done
 echo "✅ Configured CrossOver launcher shortcuts (-dx11 + Auto-Focus + Cursor Hide)"
 
-# 5. Apply 60 FPS cap, disable VSync & configure balanced TSR/Lumen scalability in GameUserSettings.ini
+# 5. Apply 60 FPS cap, enable VSync & configure balanced TSR/Lumen scalability in GameUserSettings.ini
 GUS_INI="$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/Config/Windows/GameUserSettings.ini"
 if [[ -f "$GUS_INI" ]]; then
   python3 -c '
@@ -125,9 +125,9 @@ with open(p, "rb") as f:
     data = f.read().decode("utf-8", errors="ignore")
 data = data.replace("FpsCap=Fps30", "FpsCap=Fps60").replace("FpsCap=Unlimited", "FpsCap=Fps60")
 data = data.replace("FrameRateLimit=30.000000", "FrameRateLimit=60.000000").replace("FrameRateLimit=0.000000", "FrameRateLimit=60.000000")
-data = data.replace("bUseVSync=True", "bUseVSync=False")
-data = data.replace("(\"VSync\", 1)", "(\"VSync\", 0)")
-data = data.replace("VSync=True", "VSync=False")
+data = data.replace("bUseVSync=False", "bUseVSync=True")
+data = data.replace("(\"VSync\", 0)", "(\"VSync\", 1)")
+data = data.replace("VSync=False", "VSync=True")
 data = data.replace("sg.ResolutionQuality=100", "sg.ResolutionQuality=67")
 data = data.replace("sg.GlobalIlluminationQuality=3", "sg.GlobalIlluminationQuality=2")
 data = data.replace("sg.ShadowQuality=3", "sg.ShadowQuality=2")
@@ -141,7 +141,7 @@ data = data.replace("(\"Adv_ResolutionScalability\", 3)", "(\"Adv_ResolutionScal
 with open(p, "wb") as f:
     f.write(data.encode("utf-8"))
 ' "$GUS_INI"
-  echo "✅ Applied 60 FPS cap, disabled VSync & balanced TSR/Lumen scalability in GameUserSettings.ini"
+  echo "✅ Applied 60 FPS cap, enabled VSync & balanced TSR/Lumen scalability in GameUserSettings.ini"
 fi
 
 # 6. Bypass "Select a Profile" prompt & apply UE5 SystemSettings overrides in Engine.ini
@@ -157,12 +157,12 @@ if "[OnlineSubsystem]" not in data:
     data += "\r\n[OnlineSubsystem]\r\nDefaultPlatformService=Null\r\nbAutoLogin=true\r\n\r\n[OnlineSubsystemSteam]\r\nbEnabled=false\r\n\r\n[OnlineSubsystemGOG]\r\nbEnabled=false\r\nbRequireBackendAuthorization=false\r\n"
 
 if "[SystemSettings]" not in data:
-    data += "\r\n[SystemSettings]\r\nr.VSync=0\r\nr.ScreenPercentage=67\r\nr.DynamicGlobalIlluminationMethod=1\r\nr.Lumen.ScreenProbeGather.DownsampleFactor=16\r\nr.Lumen.DiffuseIndirect.Async=1\r\nr.Shadow.Virtual.Cache.MaxPageAge=64\r\nr.VolumetricFog.GridPixelSizeFactor=16\r\nr.TSR.AsyncCompute=1\r\n"
+    data += "\r\n[SystemSettings]\r\nr.VSync=1\r\nr.ScreenPercentage=67\r\nr.DynamicGlobalIlluminationMethod=1\r\nr.ReflectionMethod=2\r\nr.Lumen.TranslucencyReflections.FrontLayer.Enable=0\r\nr.Lumen.ScreenProbeGather.DownsampleFactor=16\r\nr.Lumen.DiffuseIndirect.Async=1\r\nr.Shadow.Virtual.Cache.MaxPageAge=64\r\nr.VolumetricFog.GridPixelSizeFactor=16\r\nr.TSR.AsyncCompute=1\r\n"
 
 with open(p, "wb") as f:
     f.write(data.encode("utf-8"))
 ' "$ENGINE_INI"
-  echo "✅ Configured offline profile auto-login & UE5 SystemSettings (TSR 67%, Lumen & Fog optimizations) in Engine.ini"
+  echo "✅ Configured offline profile auto-login & UE5 SystemSettings (VSync, SSR reflections, TSR 67%) in Engine.ini"
 fi
 
 # 7. Clean unneeded crash/temp logs in the bottle

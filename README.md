@@ -41,7 +41,8 @@ On Apple Silicon Macs (such as M2 Pro / M3), two compounding issues can trap the
 **How `SH2R-CrossOver-Fix` solves it:**
 - Enforces `"CX_GRAPHICS_BACKEND" = "dxmt"` in `cxbottle.conf` for native D3D11-to-Metal translation instead of the slow D3D11-on-D3D12 fallback.
 - Injects authoritative `[SystemSettings]` overrides into `Engine.ini` that cannot be overwritten by UE5's startup benchmark:
-  - `r.VSync=0` — Disables double-buffered VSync quantization.
+  - `r.VSync=1` — Synchronizes presentation to prevent screen tearing while maintaining smooth frame pacing.
+  - `r.ReflectionMethod=2` — Uses Screen Space Reflections (SSR) instead of heavy Lumen reflections, recovering massive GPU headroom to maintain smooth framerates above the VSync refresh threshold.
   - `r.ScreenPercentage=67` — Locks TSR internal render scale to 67% (Quality mode, rendering ~1200×780 and upscaling cleanly to 1800×1169).
   - `r.Lumen.ScreenProbeGather.DownsampleFactor=16` & `r.Lumen.DiffuseIndirect.Async=1` — Optimizes Lumen indirect lighting compute passes.
   - `r.VolumetricFog.GridPixelSizeFactor=16` — Halves volumetric fog shader overhead in outdoor town sections.
