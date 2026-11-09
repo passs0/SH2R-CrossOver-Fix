@@ -190,6 +190,46 @@ def set_pyramid_head_pacify(decomp, pacify=False):
             count += 1
     return count
 
+def get_enemies_pacified_status(decomp):
+    prefix = b"_IgnoreAll\x00\r\x00\x00\x00BoolProperty\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    pos = 0
+    total = 0
+    pacified = 0
+    while True:
+        pos = decomp.find(prefix, pos)
+        if pos == -1:
+            break
+        chunk = decomp[max(0, pos-400):pos]
+        if b"Human_AI" not in chunk:
+            total += 1
+            if decomp[pos + len(prefix)] == 1:
+                pacified += 1
+        pos += len(prefix)
+    if total == 0:
+        return "No enemies in save state"
+    elif pacified == total:
+        return f"Pacified ({pacified}/{total} ignoring)"
+    elif pacified > 0:
+        return f"Partially Pacified ({pacified}/{total} ignoring)"
+    else:
+        return f"Active & Hostile ({total} enemies)"
+
+def set_all_enemies_pacify(decomp, pacify=False):
+    prefix = b"_IgnoreAll\x00\r\x00\x00\x00BoolProperty\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    val = 1 if pacify else 0
+    pos = 0
+    count = 0
+    while True:
+        pos = decomp.find(prefix, pos)
+        if pos == -1:
+            break
+        chunk = decomp[max(0, pos-400):pos]
+        if b"Human_AI" not in chunk:
+            decomp[pos + len(prefix)] = val
+            count += 1
+        pos += len(prefix)
+    return count
+
 def restore_latest_backup(save_dir=DEFAULT_SAVE_DIR):
     saves = glob.glob(os.path.join(save_dir, "SaveGameData_*.sav.bak_*"))
     if not saves:
@@ -201,7 +241,7 @@ def restore_latest_backup(save_dir=DEFAULT_SAVE_DIR):
     print(f"🛡️  Restored {os.path.basename(base_name)} from {os.path.basename(latest_bak)}")
     return True
 
-def apply_cheats(save_path, ammo=True, health=True, chainsaw=True, pacify_ph=False):
+def apply_cheats(save_path, ammo=True, health=True, chainsaw=True, pacify_ph=False, pacify_all=False):
     raw_data, ydbx_idx, decomp = read_decompressed(save_path)
     fname = os.path.basename(save_path)
     print(f"\n📂 Applying to: {fname}")
@@ -233,11 +273,20 @@ def apply_cheats(save_path, ammo=True, health=True, chainsaw=True, pacify_ph=Fal
         print("  🦯  Melee Weapon                   : Iron Pipe [RESTORED]")
 
     # Pyramid Head
-    set_pyramid_head_pacify(decomp, pacify=pacify_ph)
     if pacify_ph:
+        set_pyramid_head_pacify(decomp, pacify=True)
         print("  ⚔️  Pyramid Head                   : Pacified (Ignore Mode) [ON]")
     else:
+        set_pyramid_head_pacify(decomp, pacify=False)
         print("  ⚔️  Pyramid Head                   : Active & Hostile [NORMAL]")
+
+    # All Enemies
+    if pacify_all:
+        count = set_all_enemies_pacify(decomp, pacify=True)
+        print(f"  👻  All Enemies                    : Pacified ({count} ignoring player) [ON]")
+    else:
+        count = set_all_enemies_pacify(decomp, pacify=False)
+        print(f"  👾  All Enemies                    : Active & Hostile ({count} enemies) [NORMAL]")
 
     print("-" * 50)
     bak = write_repacked(save_path, raw_data, ydbx_idx, decomp)
@@ -259,6 +308,7 @@ def print_status(save_path):
     syr = get_item_quantity(decomp, "Syringe") or 0
     wpn = get_weapon_status(decomp)
     ph = get_pyramid_head_status(decomp)
+    enemies = get_enemies_pacified_status(decomp)
 
     hp_str = f"{hp:.0f} / 100" if hp is not None else "Unknown"
     print(f"  ❤️  Player Health   : {hp_str}")
@@ -269,13 +319,15 @@ def print_status(save_path):
     print(f"  🔫  Rifle Ammo      : {rf}")
     print(f"  🪚  Melee Weapon    : {wpn}")
     print(f"  ⚔️  Pyramid Head    : {ph}")
+    print(f"  👻  All Enemies     : {enemies}")
     print("-" * 50)
 
 def interactive_cli(save_path):
     opt_ammo = True
     opt_health = True
     opt_chainsaw = True
-    opt_pacify = False
+    opt_pacify_ph = False
+    opt_pacify_all = False
 
     while True:
         print("\n" + "=" * 52)
@@ -284,10 +336,11 @@ def interactive_cli(save_path):
         print_status(save_path)
 
         print("TOGGLE CHEATS:")
-        print(f"  [1] Infinite Ammo (9,999)     : [{'ON' if opt_ammo else 'OFF'}]")
+        print(f"  [1] Infinite Ammo (9,999)      : [{'ON' if opt_ammo else 'OFF'}]")
         print(f"  [2] Infinite Health Items (999): [{'ON' if opt_health else 'OFF'}]")
-        print(f"  [3] NG+ Chainsaw Weapon       : [{'ON' if opt_chainsaw else 'OFF'}]")
-        print(f"  [4] Pacify Pyramid Head       : [{'ON' if opt_pacify else 'OFF'}]")
+        print(f"  [3] NG+ Chainsaw Weapon        : [{'ON' if opt_chainsaw else 'OFF'}]")
+        print(f"  [4] Pacify Pyramid Head        : [{'ON' if opt_pacify_ph else 'OFF'}]")
+        print(f"  [5] Pacify All Enemies (Ignore): [{'ON' if opt_pacify_all else 'OFF'}]")
         print("\nACTIONS:")
         print("  [A] Apply to Save (Press Enter)")
         print("  [R] Restore Latest Backup")
@@ -301,7 +354,7 @@ def interactive_cli(save_path):
             sys.exit(0)
 
         if choice in ("", "A"):
-            apply_cheats(save_path, ammo=opt_ammo, health=opt_health, chainsaw=opt_chainsaw, pacify_ph=opt_pacify)
+            apply_cheats(save_path, ammo=opt_ammo, health=opt_health, chainsaw=opt_chainsaw, pacify_ph=opt_pacify_ph, pacify_all=opt_pacify_all)
             break
         elif choice == "1":
             opt_ammo = not opt_ammo
@@ -310,7 +363,9 @@ def interactive_cli(save_path):
         elif choice == "3":
             opt_chainsaw = not opt_chainsaw
         elif choice == "4":
-            opt_pacify = not opt_pacify
+            opt_pacify_ph = not opt_pacify_ph
+        elif choice == "5":
+            opt_pacify_all = not opt_pacify_all
         elif choice == "R":
             restore_latest_backup()
             break
@@ -329,6 +384,7 @@ def main():
     parser.add_argument("--no-health", action="store_true", help="Do not touch health items")
     parser.add_argument("--no-chainsaw", action="store_true", help="Revert to Iron Pipe")
     parser.add_argument("--pacify-ph", action="store_true", help="Pacify Pyramid Head")
+    parser.add_argument("--pacify-all", action="store_true", help="Pacify all enemies in current area")
 
     args = parser.parse_args()
 
@@ -341,13 +397,14 @@ def main():
         restore_latest_backup(args.dir)
     elif args.status:
         print_status(save_path)
-    elif args.apply or args.no_ammo or args.no_health or args.no_chainsaw or args.pacify_ph:
+    elif args.apply or args.no_ammo or args.no_health or args.no_chainsaw or args.pacify_ph or args.pacify_all:
         apply_cheats(
             save_path,
             ammo=not args.no_ammo,
             health=not args.no_health,
             chainsaw=not args.no_chainsaw,
-            pacify_ph=args.pacify_ph
+            pacify_ph=args.pacify_ph,
+            pacify_all=args.pacify_all
         )
     else:
         interactive_cli(save_path)
