@@ -67,7 +67,7 @@ echo "✅ Installed native sh2_focus helper, focus_and_hide_cursor.sh, and verif
 ICON_PATH=$(find "$TARGET_BOTTLE/windata/cxmenu/icons/hicolor/256x256" -name "*goggame-2051029707*.png" 2>/dev/null | head -n 1)
 [[ -z "$ICON_PATH" ]] && ICON_PATH="2BF3_goggame-2051029707.0"
 
-RAW_CMD="sh -c 'sh \\\"$TARGET_BOTTLE/focus_and_hide_cursor.sh\\\" & cd \\\"$SH2_WIN64_DIR\\\" && exec \\\"$CX_BIN/wine\\\" --bottle \\\"$BOTTLE_NAME\\\" --check --wait-children \\\"$SH2_EXE\\\" SHProto -dx11 SAVEWINPOS=1 -ResX=1280 -ResY=800'"
+RAW_CMD="sh -c 'sh \\\"$TARGET_BOTTLE/focus_and_hide_cursor.sh\\\" & cd \\\"$SH2_WIN64_DIR\\\" && exec \\\"$CX_BIN/wine\\\" --bottle \\\"$BOTTLE_NAME\\\" --check --wait-children \\\"$SH2_EXE\\\" SHProto -dx11 SAVEWINPOS=1 -ResX=1080 -ResY=702'"
 
 cat > "$TARGET_BOTTLE/cxmenu.conf" <<EOF
 [StartMenu.C^3A_ProgramData_Microsoft_Windows_Start+Menu/Programs/Silent Hill 2 [GOG.com]/Silent Hill 2.lnk]
@@ -110,12 +110,12 @@ for lnk in \
     cat > "$lnk" <<EOF
 #!/bin/sh
 sh "$TARGET_BOTTLE/focus_and_hide_cursor.sh" >/dev/null 2>&1 &
-cd "$SH2_WIN64_DIR" && exec "$CX_BIN/wine" --bottle "$BOTTLE_NAME" --check --wait-children "$SH2_EXE" SHProto -dx11 SAVEWINPOS=1 -ResX=1280 -ResY=800 "\$@"
+cd "$SH2_WIN64_DIR" && exec "$CX_BIN/wine" --bottle "$BOTTLE_NAME" --check --wait-children "$SH2_EXE" SHProto -dx11 SAVEWINPOS=1 -ResX=1080 -ResY=702 "\$@"
 EOF
     chmod +x "$lnk"
   fi
 done
-echo "✅ Configured CrossOver launcher shortcuts (-dx11 + 1280x800 + Auto-Focus + Cursor Hide)"
+echo "✅ Configured CrossOver launcher shortcuts (-dx11 + 1080x702 + Auto-Focus + Cursor Hide)"
 
 # 5. Apply 30 FPS cap, enable VSync & configure Medium/Low scalability in GameUserSettings.ini
 GUS_INI="$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/Config/Windows/GameUserSettings.ini"
@@ -128,7 +128,7 @@ with open(p, "rb") as f:
     data = f.read().decode("utf-8", errors="ignore")
 
 scalability = """[ScalabilityGroups]
-sg.ResolutionQuality=60
+sg.ResolutionQuality=100
 sg.ViewDistanceQuality=1
 sg.AntiAliasingQuality=2
 sg.ShadowQuality=0
@@ -154,26 +154,28 @@ data = data.replace("(\"Adv_Quality\", 2)", "(\"Adv_Quality\", 1)")
 data = data.replace("(\"Adv_LensFlares\", 2)", "(\"Adv_LensFlares\", 0)")
 data = data.replace("(\"Adv_TextureQuality\", 2)", "(\"Adv_TextureQuality\", 1)")
 data = data.replace("sg.TextureQuality=2", "sg.TextureQuality=1")
-data = data.replace("Resolution=(X=1800,Y=1169)", "Resolution=(X=1280,Y=800)")
-data = data.replace("ResolutionSizeX=1800", "ResolutionSizeX=1280")
-data = data.replace("ResolutionSizeY=1169", "ResolutionSizeY=800")
-data = data.replace("LastUserConfirmedResolutionSizeX=1800", "LastUserConfirmedResolutionSizeX=1280")
-data = data.replace("LastUserConfirmedResolutionSizeY=1169", "LastUserConfirmedResolutionSizeY=800")
-data = data.replace("DesiredScreenHeight=720", "DesiredScreenHeight=800")
-data = data.replace("LastUserConfirmedDesiredScreenHeight=720", "LastUserConfirmedDesiredScreenHeight=800")
+data = re.sub(r"Resolution=\(X=[0-9]+,Y=[0-9]+\)", "Resolution=(X=1080,Y=702)", data)
+data = re.sub(r"ResolutionSizeX=[0-9]+", "ResolutionSizeX=1080", data)
+data = re.sub(r"ResolutionSizeY=[0-9]+", "ResolutionSizeY=702", data)
+data = re.sub(r"LastUserConfirmedResolutionSizeX=[0-9]+", "LastUserConfirmedResolutionSizeX=1080", data)
+data = re.sub(r"LastUserConfirmedResolutionSizeY=[0-9]+", "LastUserConfirmedResolutionSizeY=702", data)
+data = re.sub(r"DesiredScreenWidth=[0-9]+", "DesiredScreenWidth=1080", data)
+data = re.sub(r"DesiredScreenHeight=[0-9]+", "DesiredScreenHeight=702", data)
+data = re.sub(r"LastUserConfirmedDesiredScreenWidth=[0-9]+", "LastUserConfirmedDesiredScreenWidth=1080", data)
+data = re.sub(r"LastUserConfirmedDesiredScreenHeight=[0-9]+", "LastUserConfirmedDesiredScreenHeight=702", data)
 
 with open(p, "wb") as f:
     f.write(data.encode("utf-8"))
 ' "$GUS_INI"
   chmod 444 "$GUS_INI"
-  echo "✅ Applied 30 FPS cap, VSync, 1280x800 resolution & scalability in GameUserSettings.ini (locked read-only)"
+  echo "✅ Applied 30 FPS cap, VSync, 1080x702 resolution & scalability in GameUserSettings.ini (locked read-only)"
 fi
 
 # Also update GFXSettings XML if present
 XML_SETTINGS="$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/SaveGames/GFXSettings.SHProto-Win64-Shipping.xml"
 if [[ -f "$XML_SETTINGS" ]]; then
   python3 -c '
-import sys
+import sys, re
 p = sys.argv[1]
 with open(p, "rb") as f:
     text = f.read().decode("utf-16", errors="ignore")
@@ -184,11 +186,11 @@ text = text.replace("<OPTION Name=\"Adv_EffectsQuality\" Registered=\"True\" Typ
 text = text.replace("<OPTION Name=\"Adv_ShadersQuality\" Registered=\"True\" Type=\"Integer\" Value=\"1\">", "<OPTION Name=\"Adv_ShadersQuality\" Registered=\"True\" Type=\"Integer\" Value=\"2\">")
 text = text.replace("<OPTION Name=\"Adv_LensFlares\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_LensFlares\" Registered=\"True\" Type=\"Integer\" Value=\"0\">")
 text = text.replace("<OPTION Name=\"Adv_TextureQuality\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_TextureQuality\" Registered=\"True\" Type=\"Integer\" Value=\"1\">")
-text = text.replace("<RESOLUTION Width=\"1800\" Height=\"1169\" RefreshRate=\"0\" />", "<RESOLUTION Width=\"1280\" Height=\"800\" RefreshRate=\"0\" />")
+text = re.sub(r"<RESOLUTION Width=\"[0-9]+\" Height=\"[0-9]+\"", "<RESOLUTION Width=\"1080\" Height=\"702\"", text)
 with open(p, "wb") as f:
     f.write(text.encode("utf-16"))
 ' "$XML_SETTINGS"
-  echo "✅ Synchronized GFXSettings XML to 1280x800 Medium/Low 30 FPS"
+  echo "✅ Synchronized GFXSettings XML to 1080x702 Medium/Low 30 FPS"
 fi
 
 # 6. Bypass "Select a Profile" prompt & apply stable UE5 SystemSettings overrides in Engine.ini
@@ -204,13 +206,10 @@ if "[OnlineSubsystem]" not in data:
     data += "\r\n[OnlineSubsystem]\r\nDefaultPlatformService=Null\r\nbAutoLogin=true\r\n\r\n[OnlineSubsystemSteam]\r\nbEnabled=false\r\n\r\n[OnlineSubsystemGOG]\r\nbEnabled=false\r\nbRequireBackendAuthorization=false\r\n"
 
 data = re.sub(r"\[SystemSettings\][\r\n]+(?:[^\r\n\[]+[\r\n]+)*", "", data)
-data += "\r\n[SystemSettings]\r\nr.SetRes=1280x800f\r\nr.VSync=1\r\nr.ScreenPercentage=60\r\nr.VolumetricFog.GridPixelSizeFactor=16\r\nr.VolumetricFog.GridSizeZ=64\r\nr.VolumetricFog.HistoryMissSupersampleCount=4\r\nr.Lumen.ScreenProbeGather.DownsampleFactor=8\r\nr.Shadow.Virtual.Cache.MaxPageAge=64\r\nr.DepthOfFieldQuality=0\r\nr.motionblurquality=0\r\nr.SceneColorFringe.Max=0\r\nr.SceneColorFringeQuality=0\r\nr.FilmGrain=0\r\nr.Streaming.PoolSize=3072\r\nr.Streaming.LimitPoolSizeToVRAM=1\r\nr.Streaming.DefragDynamicBounds=1\r\nr.Streaming.HLODStrategy=2\r\nr.Streaming.FullyLoadUsedTextures=0\r\nr.Streaming.MaxTempMemoryAllowed=64\r\n"
+data += "\r\n[SystemSettings]\r\nr.SetRes=1080x702f\r\nr.VSync=1\r\nr.ScreenPercentage=100\r\nr.VolumetricFog.GridPixelSizeFactor=16\r\nr.VolumetricFog.GridSizeZ=64\r\nr.VolumetricFog.HistoryMissSupersampleCount=4\r\nr.Lumen.ScreenProbeGather.DownsampleFactor=8\r\nr.Shadow.Virtual.Cache.MaxPageAge=64\r\nr.DepthOfFieldQuality=0\r\nr.motionblurquality=0\r\nr.SceneColorFringe.Max=0\r\nr.SceneColorFringeQuality=0\r\nr.FilmGrain=0\r\nr.Streaming.PoolSize=3072\r\nr.Streaming.LimitPoolSizeToVRAM=1\r\nr.Streaming.DefragDynamicBounds=1\r\nr.Streaming.HLODStrategy=2\r\nr.Streaming.FullyLoadUsedTextures=0\r\nr.Streaming.MaxTempMemoryAllowed=64\r\n"
 
 with open(p, "wb") as f:
     f.write(data.encode("utf-8"))
-' "$ENGINE_INI"
-  echo "✅ Configured offline profile auto-login & stable UE5 SystemSettings in Engine.ini"
-fi
 ' "$ENGINE_INI"
   echo "✅ Configured offline profile auto-login & stable UE5 SystemSettings in Engine.ini"
 fi

@@ -40,11 +40,11 @@ On Apple Silicon Macs (such as M2 Pro / M3), two compounding issues can trap the
 
 **How `SH2R-CrossOver-Fix` solves it:**
 - Enforces `"CX_GRAPHICS_BACKEND" = "d3dmetal"` in `cxbottle.conf` to utilize Apple's official Game Porting Toolkit (GPTK) Metal translation layer.
-- Enforces an authoritative **1280×800** display resolution (16:10 matching the MacBook display) via launch arguments (`-ResX=1280 -ResY=800`) and `Engine.ini` (`r.SetRes=1280x800f`), preventing the game from reverting to native unscaled 1800p.
+- Enforces an authoritative **1080×702** display resolution (exact 1.538 aspect ratio matching the MacBook display) via launch arguments (`-ResX=1080 -ResY=702`) and `Engine.ini` (`r.SetRes=1080x702f`), cutting fill-rate load by 64% compared to native 1800p and preventing the game from reverting.
 - Locks `GameUserSettings.ini` to read-only (`chmod 444`) with **Medium/Low preset** and **Low Shadows** (`sg.ShadowQuality=0`), preventing UE5's startup benchmark from resetting to unplayable Epic settings.
-- Targets a console-style stable **30 FPS cap with VSync enabled**: on 1280×800, the M2 Pro maintains smooth 30 FPS headroom even in the dense Toluca Lake volumetric fog.
+- Targets a console-style stable **30 FPS cap with VSync enabled**: on 1080×702, the M2 Pro maintains smooth 30 FPS headroom even in the dense Toluca Lake volumetric fog.
 - Injects clean post-processing and memory-capping overrides into `Engine.ini`:
-  - `r.SetRes=1280x800f` — Locks viewport resolution to 1280×800 fullscreen.
+  - `r.SetRes=1080x702f` — Locks viewport resolution to 1080×702 fullscreen.
   - `r.VSync=1` — Synchronizes presentation with zero screen tearing.
   - `r.Streaming.PoolSize=3072` & `r.Streaming.LimitPoolSizeToVRAM=1` — Caps texture streaming memory strictly to 3 GB, preventing runaway RAM exhaustion and macOS SSD swap thrashing that causes framerates to collapse into single digits over time.
   - `r.VolumetricFog.GridPixelSizeFactor=16` & `r.VolumetricFog.GridSizeZ=64` — Halves volumetric fog voxel passes and depth slices in heavy outdoor town and lake sections.
