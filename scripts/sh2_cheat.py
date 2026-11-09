@@ -91,6 +91,21 @@ def write_repacked(save_path, raw_data, ydbx_idx, decomp):
 
     return backup_path
 
+def set_player_health(decomp, new_hp=100.0):
+    hp_pos = decomp.find(HEALTH_HEADER)
+    if hp_pos != -1:
+        val_pos = hp_pos + len(HEALTH_HEADER)
+        decomp[val_pos:val_pos+4] = struct.pack("<f", float(new_hp))
+        return True
+    return False
+
+def get_player_health(decomp):
+    hp_pos = decomp.find(HEALTH_HEADER)
+    if hp_pos != -1:
+        val_pos = hp_pos + len(HEALTH_HEADER)
+        return struct.unpack("<f", decomp[val_pos:val_pos+4])[0]
+    return None
+
 def get_item_quantity(decomp, item_name):
     target = item_name.encode("ascii")
     pos = 0
@@ -200,11 +215,12 @@ def apply_cheats(save_path, ammo=True, health=True, chainsaw=True, pacify_ph=Fal
     else:
         print("  🔫  Ammo                          : Unchanged [OFF]")
 
-    # Health Items
+    # Health Items & Restoration
     if health:
+        set_player_health(decomp, 100.0)
         for item in ["HealthDrink", "Syringe"]:
             set_item_quantity(decomp, item, 999)
-        print("  ❤️  Health Items (Drinks, Syringes) : 999 [ON]")
+        print("  ❤️  Health (HP & 999 Healing Items): 100% Full + 999 Drinks/Syringes [ON]")
     else:
         print("  ❤️  Health Items                   : Unchanged [OFF]")
 
@@ -235,6 +251,7 @@ def print_status(save_path):
 
     print(f"\n📂 Target Save: {fname} (Modified: {mtime})")
     print("-" * 50)
+    hp = get_player_health(decomp)
     hg = get_item_quantity(decomp, "HandgunAmmo") or 0
     sg = get_item_quantity(decomp, "ShotgunAmmo") or 0
     rf = get_item_quantity(decomp, "RifleAmmo") or 0
@@ -243,11 +260,13 @@ def print_status(save_path):
     wpn = get_weapon_status(decomp)
     ph = get_pyramid_head_status(decomp)
 
+    hp_str = f"{hp:.0f} / 100" if hp is not None else "Unknown"
+    print(f"  ❤️  Player Health   : {hp_str}")
+    print(f"  ❤️  Health Drinks   : {hd}")
+    print(f"  ❤️  Syringes        : {syr}")
     print(f"  🔫  Handgun Ammo    : {hg}")
     print(f"  🔫  Shotgun Ammo    : {sg}")
     print(f"  🔫  Rifle Ammo      : {rf}")
-    print(f"  ❤️  Health Drinks   : {hd}")
-    print(f"  ❤️  Syringes        : {syr}")
     print(f"  🪚  Melee Weapon    : {wpn}")
     print(f"  ⚔️  Pyramid Head    : {ph}")
     print("-" * 50)
