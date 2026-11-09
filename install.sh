@@ -196,7 +196,7 @@ if "[OnlineSubsystem]" not in data:
     data += "\r\n[OnlineSubsystem]\r\nDefaultPlatformService=Null\r\nbAutoLogin=true\r\n\r\n[OnlineSubsystemSteam]\r\nbEnabled=false\r\n\r\n[OnlineSubsystemGOG]\r\nbEnabled=false\r\nbRequireBackendAuthorization=false\r\n"
 
 data = re.sub(r"\[SystemSettings\][\r\n]+(?:[^\r\n\[]+[\r\n]+)*", "", data)
-data += "\r\n[SystemSettings]\r\nr.VSync=1\r\nr.VolumetricFog.GridPixelSizeFactor=16\r\nr.DepthOfFieldQuality=0\r\nr.motionblurquality=0\r\nr.SceneColorFringe.Max=0\r\nr.SceneColorFringeQuality=0\r\nr.FilmGrain=0\r\nr.Streaming.PoolSize=3072\r\nr.Streaming.LimitPoolSizeToVRAM=1\r\nr.Streaming.DefragDynamicBounds=1\r\nr.Streaming.HLODStrategy=2\r\nr.Streaming.FullyLoadUsedTextures=0\r\nr.Streaming.MaxTempMemoryAllowed=64\r\n"
+data += "\r\n[SystemSettings]\r\nr.VSync=1\r\nr.ScreenPercentage=60\r\nr.VolumetricFog.GridPixelSizeFactor=16\r\nr.VolumetricFog.GridSizeZ=64\r\nr.VolumetricFog.HistoryMissSupersampleCount=4\r\nr.Lumen.ScreenProbeGather.DownsampleFactor=8\r\nr.Shadow.Virtual.Cache.MaxPageAge=64\r\nr.DepthOfFieldQuality=0\r\nr.motionblurquality=0\r\nr.SceneColorFringe.Max=0\r\nr.SceneColorFringeQuality=0\r\nr.FilmGrain=0\r\nr.Streaming.PoolSize=3072\r\nr.Streaming.LimitPoolSizeToVRAM=1\r\nr.Streaming.DefragDynamicBounds=1\r\nr.Streaming.HLODStrategy=2\r\nr.Streaming.FullyLoadUsedTextures=0\r\nr.Streaming.MaxTempMemoryAllowed=64\r\n"
 
 with open(p, "wb") as f:
     f.write(data.encode("utf-8"))
