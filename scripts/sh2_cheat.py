@@ -351,7 +351,7 @@ def get_player_health(decomp):
     return None
 
 def get_item_quantity(decomp, item_name):
-    target = item_name.encode("ascii")
+    target = item_name.encode("ascii") + b"\x00"
     pos = 0
     while True:
         pos = decomp.find(target, pos)
@@ -365,7 +365,7 @@ def get_item_quantity(decomp, item_name):
         pos += len(target)
 
 def set_item_quantity(decomp, item_name, new_qty):
-    target = item_name.encode("ascii")
+    target = item_name.encode("ascii") + b"\x00"
     pos = 0
     updated = False
     old_val = None
