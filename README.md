@@ -40,14 +40,14 @@ On Apple Silicon Macs (such as M2 Pro / M3), two compounding issues can trap the
 
 **How `SH2R-CrossOver-Fix` solves it:**
 - Enforces `"CX_GRAPHICS_BACKEND" = "d3dmetal"` in `cxbottle.conf` to utilize Apple's official Game Porting Toolkit (GPTK) Metal translation layer.
-- Enforces an authoritative **720P** (`1280×720`) display resolution with aggressive TSR upscaling (`r.ScreenPercentage=75`) via launch arguments (`-ResX=1280 -ResY=720`) and `Engine.ini` (`r.SetRes=1280x720wf`), cutting GPU fill-rate load by over 70% compared to native 1800p and preventing the game from reverting.
-- Configures Borderless Fullscreen (`FullscreenMode=1` / `r.SetRes=1280x720wf`) to automatically fill the macOS display on boot without manual resolution toggling.
-- Customizable resolution via environment variables: run `RES_X=1108 RES_Y=720 ./install.sh` for exact 16:10 MacBook ratio or `RES_X=1280 RES_Y=720 ./install.sh` for standard 720p.
+- Enforces an authoritative **1280×800** display resolution (exact 16:10 aspect ratio matching the MacBook display) with aggressive TSR upscaling (`r.ScreenPercentage=75`) via launch arguments (`-ResX=1280 -ResY=800`) and `Engine.ini` (`r.SetRes=1280x800wf`), maintaining a stable **24–30 FPS** balance without letterboxing and preventing the game from reverting to native 1800p.
+- Configures Borderless Fullscreen (`FullscreenMode=1` / `r.SetRes=1280x800wf`) to automatically fill the macOS display on boot without manual resolution toggling.
+- Customizable resolution via environment variables: e.g. `RES_X=1280 RES_Y=800 ./install.sh`.
 - Locks `GameUserSettings.ini` to read-only (`chmod 444`) with **Medium/Low preset** and **Low Shadows** (`sg.ShadowQuality=0`), preventing UE5's startup benchmark from resetting to unplayable Epic settings.
-- Targets a console-style stable **30 FPS cap with VSync enabled**: on 720p with 75% TSR scaling, Apple Silicon maintains smooth 30 FPS headroom even during intensive combat and dense volumetric fog.
+- Targets a console-style stable **30 FPS cap with VSync enabled**: on 1280×800 with 75% TSR scaling, Apple Silicon maintains smooth 24–30 FPS headroom even during intensive combat and dense volumetric fog.
 - Injects clean post-processing and memory-capping overrides into `Engine.ini`:
-  - `r.SetRes=1280x720wf` — Locks viewport resolution to 1280×720 borderless fullscreen.
-  - `r.ScreenPercentage=75` — Reconstructs internal 540p render buffer to 720p with clean TSR anti-aliasing.
+  - `r.SetRes=1280x800wf` — Locks viewport resolution to 1280×800 borderless fullscreen.
+  - `r.ScreenPercentage=75` — Reconstructs internal render buffer with clean TSR anti-aliasing.
   - `r.VSync=1` — Synchronizes presentation with zero screen tearing.
   - `r.Streaming.PoolSize=3072` & `r.Streaming.LimitPoolSizeToVRAM=1` — Caps texture streaming memory strictly to 3 GB, preventing runaway RAM exhaustion and macOS SSD swap thrashing that causes framerates to collapse into single digits over time.
   - `r.VolumetricFog.GridPixelSizeFactor=16` & `r.VolumetricFog.GridSizeZ=64` — Halves volumetric fog voxel passes and depth slices in heavy outdoor town and lake sections.

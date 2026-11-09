@@ -38,9 +38,9 @@ BOTTLE_NAME="$(basename "$TARGET_BOTTLE")"
 SH2_WIN64_DIR="$TARGET_BOTTLE/drive_c/GOG Games/Silent Hill 2/SHProto/Binaries/Win64"
 SH2_EXE="$SH2_WIN64_DIR/SHProto-Win64-Shipping.exe"
 
-# Target Resolution & TSR Screen Percentage (Defaults to 720P aggressive scaling)
+# Target Resolution & TSR Screen Percentage (Defaults to 1280x800 16:10 for MacBook display)
 RES_X="${RES_X:-1280}"
-RES_Y="${RES_Y:-720}"
+RES_Y="${RES_Y:-800}"
 SCREEN_PERCENTAGE="${SCREEN_PERCENTAGE:-75}"
 
 echo "✅ Found Silent Hill 2 Remake in bottle: $BOTTLE_NAME"
