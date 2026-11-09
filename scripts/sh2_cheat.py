@@ -230,6 +230,63 @@ def set_all_enemies_pacify(decomp, pacify=False):
         pos += len(prefix)
     return count
 
+def has_lost_memories(decomp):
+    return b"LhOW_LostMemories_Note" in decomp
+
+def inject_lost_memories(decomp):
+    if has_lost_memories(decomp):
+        return False, "Already present in save"
+
+    name_entry = b"\x17\x00\x00\x00LhOW_LostMemories_Note\x00"
+    collected_entry = (
+        b"\x0c\x00\x00\x00ItemRowName\x00\r\x00\x00\x00NameProperty\x00\x1b\x00\x00\x00\x00\x00\x00\x00\x00"
+        b"\x17\x00\x00\x00LhOW_LostMemories_Note\x00"
+        b"\t\x00\x00\x00Quantity\x00\x0c\x00\x00\x00IntProperty\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00"
+        b"\x01\x00\x00\x00"
+        b"\x05\x00\x00\x00None\x00"
+    )
+
+    # 1. MemosItemsPickedUp (master memo achievement tracker)
+    memo_pos = decomp.find(b"\x13\x00\x00\x00MemosItemsPickedUp\x00")
+    if memo_pos != -1:
+        memo_ds_pos = memo_pos + 41
+        memo_cnt_pos = memo_pos + 67
+        old_ds = struct.unpack("<Q", decomp[memo_ds_pos:memo_ds_pos+8])[0]
+        old_cnt = struct.unpack("<I", decomp[memo_cnt_pos:memo_cnt_pos+4])[0]
+        insert_pos_memo = memo_cnt_pos + old_ds
+        decomp[memo_ds_pos:memo_ds_pos+8] = struct.pack("<Q", old_ds + len(name_entry))
+        decomp[memo_cnt_pos:memo_cnt_pos+4] = struct.pack("<I", old_cnt + 1)
+        decomp[insert_pos_memo:insert_pos_memo] = name_entry
+
+    # 2. SkipInvestigationItems (prevents camera lock / inspection loop)
+    sii_pos = decomp.find(b"\x17\x00\x00\x00SkipInvestigationItems\x00")
+    if sii_pos != -1:
+        sii_ds_pos = sii_pos + 45
+        sii_cnt_pos = sii_pos + 71
+        old_sii_ds = struct.unpack("<Q", decomp[sii_ds_pos:sii_ds_pos+8])[0]
+        old_sii_cnt = struct.unpack("<I", decomp[sii_cnt_pos:sii_cnt_pos+4])[0]
+        insert_pos_sii = sii_cnt_pos + old_sii_ds
+        decomp[sii_ds_pos:sii_ds_pos+8] = struct.pack("<Q", old_sii_ds + len(name_entry))
+        decomp[sii_cnt_pos:sii_cnt_pos+4] = struct.pack("<I", old_sii_cnt + 1)
+        decomp[insert_pos_sii:insert_pos_sii] = name_entry
+
+    # 3. CollectedItems (inventory array)
+    ci_pos = decomp.find(b"\x0f\x00\x00\x00CollectedItems\x00")
+    if ci_pos != -1:
+        ci_ads_pos = ci_pos + 37
+        ci_cnt_pos = ci_pos + 65
+        ci_sds_pos = ci_pos + 107
+        old_ads = struct.unpack("<Q", decomp[ci_ads_pos:ci_ads_pos+8])[0]
+        old_cnt = struct.unpack("<I", decomp[ci_cnt_pos:ci_cnt_pos+4])[0]
+        old_sds = struct.unpack("<Q", decomp[ci_sds_pos:ci_sds_pos+8])[0]
+        insert_pos_ci = ci_pos + 115 + 24 + 17 + old_sds
+        decomp[ci_ads_pos:ci_ads_pos+8] = struct.pack("<Q", old_ads + len(collected_entry))
+        decomp[ci_cnt_pos:ci_cnt_pos+4] = struct.pack("<I", old_cnt + 1)
+        decomp[ci_sds_pos:ci_sds_pos+8] = struct.pack("<Q", old_sds + len(collected_entry))
+        decomp[insert_pos_ci:insert_pos_ci] = collected_entry
+
+    return True, "Injected into CollectedItems, SkipInvestigationItems, and MemosItemsPickedUp"
+
 def restore_latest_backup(save_dir=DEFAULT_SAVE_DIR):
     saves = glob.glob(os.path.join(save_dir, "SaveGameData_*.sav.bak_*"))
     if not saves:
@@ -241,7 +298,7 @@ def restore_latest_backup(save_dir=DEFAULT_SAVE_DIR):
     print(f"🛡️  Restored {os.path.basename(base_name)} from {os.path.basename(latest_bak)}")
     return True
 
-def apply_cheats(save_path, ammo=True, health=True, chainsaw=True, pacify_ph=False, pacify_all=False):
+def apply_cheats(save_path, ammo=True, health=True, chainsaw=True, pacify_ph=False, pacify_all=False, inject_book=False):
     raw_data, ydbx_idx, decomp = read_decompressed(save_path)
     fname = os.path.basename(save_path)
     print(f"\n📂 Applying to: {fname}")
@@ -265,28 +322,42 @@ def apply_cheats(save_path, ammo=True, health=True, chainsaw=True, pacify_ph=Fal
         print("  ❤️  Health Items                   : Unchanged [OFF]")
 
     # Chainsaw
-    if chainsaw:
+    if chainsaw is True:
         set_weapon(decomp, to_chainsaw=True)
         print("  🪚  Melee Weapon                   : NG+ Chainsaw [ON]")
-    else:
+    elif chainsaw is False:
         set_weapon(decomp, to_chainsaw=False)
         print("  🦯  Melee Weapon                   : Iron Pipe [RESTORED]")
+    else:
+        print("  🪚  Melee Weapon                   : Unchanged [OFF]")
 
     # Pyramid Head
-    if pacify_ph:
+    if pacify_ph is True:
         set_pyramid_head_pacify(decomp, pacify=True)
         print("  ⚔️  Pyramid Head                   : Pacified (Ignore Mode) [ON]")
-    else:
+    elif pacify_ph is False:
         set_pyramid_head_pacify(decomp, pacify=False)
         print("  ⚔️  Pyramid Head                   : Active & Hostile [NORMAL]")
+    else:
+        print("  ⚔️  Pyramid Head                   : Unchanged [OFF]")
 
     # All Enemies
-    if pacify_all:
+    if pacify_all is True:
         count = set_all_enemies_pacify(decomp, pacify=True)
         print(f"  👻  All Enemies                    : Pacified ({count} ignoring player) [ON]")
-    else:
+    elif pacify_all is False:
         count = set_all_enemies_pacify(decomp, pacify=False)
         print(f"  👾  All Enemies                    : Active & Hostile ({count} enemies) [NORMAL]")
+    else:
+        print("  👾  All Enemies                    : Unchanged [OFF]")
+
+    # Book of Lost Memories
+    if inject_book:
+        ok, msg = inject_lost_memories(decomp)
+        if ok:
+            print("  📖  Book of Lost Memories          : Injected (100% Archival Rate) [ON]")
+        else:
+            print(f"  📖  Book of Lost Memories          : {msg}")
 
     print("-" * 50)
     bak = write_repacked(save_path, raw_data, ydbx_idx, decomp)
@@ -309,6 +380,7 @@ def print_status(save_path):
     wpn = get_weapon_status(decomp)
     ph = get_pyramid_head_status(decomp)
     enemies = get_enemies_pacified_status(decomp)
+    book = "Present in Save" if has_lost_memories(decomp) else "Missing"
 
     hp_str = f"{hp:.0f} / 100" if hp is not None else "Unknown"
     print(f"  ❤️  Player Health   : {hp_str}")
@@ -320,6 +392,7 @@ def print_status(save_path):
     print(f"  🪚  Melee Weapon    : {wpn}")
     print(f"  ⚔️  Pyramid Head    : {ph}")
     print(f"  👻  All Enemies     : {enemies}")
+    print(f"  📖  Lost Memories   : {book}")
     print("-" * 50)
 
 def interactive_cli(save_path):
@@ -328,6 +401,7 @@ def interactive_cli(save_path):
     opt_chainsaw = True
     opt_pacify_ph = False
     opt_pacify_all = False
+    opt_inject_book = False
 
     while True:
         print("\n" + "=" * 52)
@@ -341,6 +415,7 @@ def interactive_cli(save_path):
         print(f"  [3] NG+ Chainsaw Weapon        : [{'ON' if opt_chainsaw else 'OFF'}]")
         print(f"  [4] Pacify Pyramid Head        : [{'ON' if opt_pacify_ph else 'OFF'}]")
         print(f"  [5] Pacify All Enemies (Ignore): [{'ON' if opt_pacify_all else 'OFF'}]")
+        print(f"  [6] Inject Book of Lost Memories : [{'ON' if opt_inject_book else 'OFF'}]")
         print("\nACTIONS:")
         print("  [A] Apply to Save (Press Enter)")
         print("  [R] Restore Latest Backup")
@@ -354,7 +429,7 @@ def interactive_cli(save_path):
             sys.exit(0)
 
         if choice in ("", "A"):
-            apply_cheats(save_path, ammo=opt_ammo, health=opt_health, chainsaw=opt_chainsaw, pacify_ph=opt_pacify_ph, pacify_all=opt_pacify_all)
+            apply_cheats(save_path, ammo=opt_ammo, health=opt_health, chainsaw=opt_chainsaw, pacify_ph=opt_pacify_ph, pacify_all=opt_pacify_all, inject_book=opt_inject_book)
             break
         elif choice == "1":
             opt_ammo = not opt_ammo
@@ -366,6 +441,8 @@ def interactive_cli(save_path):
             opt_pacify_ph = not opt_pacify_ph
         elif choice == "5":
             opt_pacify_all = not opt_pacify_all
+        elif choice == "6":
+            opt_inject_book = not opt_inject_book
         elif choice == "R":
             restore_latest_backup()
             break
@@ -385,6 +462,7 @@ def main():
     parser.add_argument("--no-chainsaw", action="store_true", help="Revert to Iron Pipe")
     parser.add_argument("--pacify-ph", action="store_true", help="Pacify Pyramid Head")
     parser.add_argument("--pacify-all", action="store_true", help="Pacify all enemies in current area")
+    parser.add_argument("--inject-book", action="store_true", help="Inject Book of Lost Memories into save")
 
     args = parser.parse_args()
 
@@ -397,6 +475,17 @@ def main():
         restore_latest_backup(args.dir)
     elif args.status:
         print_status(save_path)
+    elif args.inject_book and not args.apply:
+        # Standalone book injection without modifying existing player ammo/health/weapons
+        apply_cheats(
+            save_path,
+            ammo=False,
+            health=False,
+            chainsaw=None,
+            pacify_ph=None,
+            pacify_all=None,
+            inject_book=True
+        )
     elif args.apply or args.no_ammo or args.no_health or args.no_chainsaw or args.pacify_ph or args.pacify_all:
         apply_cheats(
             save_path,
@@ -404,7 +493,8 @@ def main():
             health=not args.no_health,
             chainsaw=not args.no_chainsaw,
             pacify_ph=args.pacify_ph,
-            pacify_all=args.pacify_all
+            pacify_all=args.pacify_all,
+            inject_book=args.inject_book
         )
     else:
         interactive_cli(save_path)
