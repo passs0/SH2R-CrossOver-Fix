@@ -115,40 +115,72 @@ EOF
 done
 echo "✅ Configured CrossOver launcher shortcuts (-dx11 + Auto-Focus + Cursor Hide)"
 
-# 5. Apply 60 FPS cap, enable VSync & configure balanced TSR/Lumen scalability in GameUserSettings.ini
+# 5. Apply 30 FPS cap, enable VSync & configure Medium/Low scalability in GameUserSettings.ini
 GUS_INI="$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/Config/Windows/GameUserSettings.ini"
 if [[ -f "$GUS_INI" ]]; then
+  chmod 666 "$GUS_INI" 2>/dev/null || true
+  python3 -c '
+import sys, re
+p = sys.argv[1]
+with open(p, "rb") as f:
+    data = f.read().decode("utf-8", errors="ignore")
+
+scalability = """[ScalabilityGroups]
+sg.ResolutionQuality=67
+sg.ViewDistanceQuality=1
+sg.AntiAliasingQuality=2
+sg.ShadowQuality=0
+sg.GlobalIlluminationQuality=1
+sg.ReflectionQuality=1
+sg.PostProcessQuality=1
+sg.TextureQuality=2
+sg.EffectsQuality=1
+sg.FoliageQuality=1
+sg.ShadingQuality=1"""
+
+data = re.sub(r"\[ScalabilityGroups\][\r\n]+(?:sg\.[^\r\n]+[\r\n]+)*", scalability + "\r\n", data)
+data = data.replace("FpsCap=Fps60", "FpsCap=Fps30").replace("FpsCap=Unlimited", "FpsCap=Fps30")
+data = data.replace("FrameRateLimit=60.000000", "FrameRateLimit=30.000000").replace("FrameRateLimit=0.000000", "FrameRateLimit=30.000000")
+data = data.replace("bUseVSync=False", "bUseVSync=True")
+data = data.replace("(\"VSync\", 0)", "(\"VSync\", 1)")
+data = data.replace("VSync=False", "VSync=True")
+data = data.replace("(\"FpsCap\", 1)", "(\"FpsCap\", 0)")
+data = data.replace("(\"Adv_ShadowQuality\", 2)", "(\"Adv_ShadowQuality\", 0)")
+data = data.replace("(\"Adv_EffectsQuality\", 2)", "(\"Adv_EffectsQuality\", 1)")
+data = data.replace("(\"Adv_ShadersQuality\", 2)", "(\"Adv_ShadersQuality\", 1)")
+data = data.replace("(\"Adv_Quality\", 2)", "(\"Adv_Quality\", 1)")
+
+with open(p, "wb") as f:
+    f.write(data.encode("utf-8"))
+' "$GUS_INI"
+  chmod 444 "$GUS_INI"
+  echo "✅ Applied 30 FPS cap, VSync & Medium/Low scalability in GameUserSettings.ini (locked read-only)"
+fi
+
+# Also update GFXSettings XML if present
+XML_SETTINGS="$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/SaveGames/GFXSettings.SHProto-Win64-Shipping.xml"
+if [[ -f "$XML_SETTINGS" ]]; then
   python3 -c '
 import sys
 p = sys.argv[1]
 with open(p, "rb") as f:
-    data = f.read().decode("utf-8", errors="ignore")
-data = data.replace("FpsCap=Fps30", "FpsCap=Fps60").replace("FpsCap=Unlimited", "FpsCap=Fps60")
-data = data.replace("FrameRateLimit=30.000000", "FrameRateLimit=60.000000").replace("FrameRateLimit=0.000000", "FrameRateLimit=60.000000")
-data = data.replace("bUseVSync=False", "bUseVSync=True")
-data = data.replace("(\"VSync\", 0)", "(\"VSync\", 1)")
-data = data.replace("VSync=False", "VSync=True")
-data = data.replace("sg.ResolutionQuality=100", "sg.ResolutionQuality=67")
-data = data.replace("sg.GlobalIlluminationQuality=3", "sg.GlobalIlluminationQuality=2")
-data = data.replace("sg.ShadowQuality=3", "sg.ShadowQuality=2")
-data = data.replace("sg.ReflectionQuality=3", "sg.ReflectionQuality=2")
-data = data.replace("sg.ViewDistanceQuality=3", "sg.ViewDistanceQuality=2")
-data = data.replace("sg.PostProcessQuality=3", "sg.PostProcessQuality=2")
-data = data.replace("sg.EffectsQuality=3", "sg.EffectsQuality=2")
-data = data.replace("sg.FoliageQuality=3", "sg.FoliageQuality=2")
-data = data.replace("sg.ShadingQuality=3", "sg.ShadingQuality=2")
-data = data.replace("(\"Adv_ResolutionScalability\", 3)", "(\"Adv_ResolutionScalability\", 2)")
+    text = f.read().decode("utf-16", errors="ignore")
+text = text.replace("<OPTION Name=\"FPSCap\" Registered=\"True\" Type=\"Integer\" Value=\"1\">", "<OPTION Name=\"FPSCap\" Registered=\"True\" Type=\"Integer\" Value=\"0\">")
+text = text.replace("<OPTION Name=\"Adv_Quality\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_Quality\" Registered=\"True\" Type=\"Integer\" Value=\"1\">")
+text = text.replace("<OPTION Name=\"Adv_ShadowQuality\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_ShadowQuality\" Registered=\"True\" Type=\"Integer\" Value=\"0\">")
+text = text.replace("<OPTION Name=\"Adv_EffectsQuality\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_EffectsQuality\" Registered=\"True\" Type=\"Integer\" Value=\"1\">")
+text = text.replace("<OPTION Name=\"Adv_ShadersQuality\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_ShadersQuality\" Registered=\"True\" Type=\"Integer\" Value=\"1\">")
 with open(p, "wb") as f:
-    f.write(data.encode("utf-8"))
-' "$GUS_INI"
-  echo "✅ Applied 60 FPS cap, enabled VSync & balanced TSR/Lumen scalability in GameUserSettings.ini"
+    f.write(text.encode("utf-16"))
+' "$XML_SETTINGS"
+  echo "✅ Synchronized GFXSettings XML to Medium/Low 30 FPS"
 fi
 
-# 6. Bypass "Select a Profile" prompt & apply UE5 SystemSettings overrides in Engine.ini
+# 6. Bypass "Select a Profile" prompt & apply stable UE5 SystemSettings overrides in Engine.ini
 ENGINE_INI="$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/Config/Windows/Engine.ini"
 if [[ -f "$ENGINE_INI" ]]; then
   python3 -c '
-import sys
+import sys, re
 p = sys.argv[1]
 with open(p, "rb") as f:
     data = f.read().decode("utf-8", errors="ignore")
@@ -156,13 +188,13 @@ with open(p, "rb") as f:
 if "[OnlineSubsystem]" not in data:
     data += "\r\n[OnlineSubsystem]\r\nDefaultPlatformService=Null\r\nbAutoLogin=true\r\n\r\n[OnlineSubsystemSteam]\r\nbEnabled=false\r\n\r\n[OnlineSubsystemGOG]\r\nbEnabled=false\r\nbRequireBackendAuthorization=false\r\n"
 
-if "[SystemSettings]" not in data:
-    data += "\r\n[SystemSettings]\r\nr.VSync=1\r\nr.ScreenPercentage=67\r\nr.DynamicGlobalIlluminationMethod=1\r\nr.ReflectionMethod=2\r\nr.Lumen.TranslucencyReflections.FrontLayer.Enable=0\r\nr.Lumen.ScreenProbeGather.DownsampleFactor=16\r\nr.Lumen.DiffuseIndirect.Async=1\r\nr.Shadow.Virtual.Cache.MaxPageAge=64\r\nr.VolumetricFog.GridPixelSizeFactor=16\r\nr.TSR.AsyncCompute=1\r\n"
+data = re.sub(r"\[SystemSettings\][\r\n]+(?:[^\r\n\[]+[\r\n]+)*", "", data)
+data += "\r\n[SystemSettings]\r\nr.VSync=1\r\nr.VolumetricFog.GridPixelSizeFactor=16\r\nr.DepthOfFieldQuality=0\r\nr.motionblurquality=0\r\nr.SceneColorFringeQuality=0\r\nr.FilmGrain=0\r\n"
 
 with open(p, "wb") as f:
     f.write(data.encode("utf-8"))
 ' "$ENGINE_INI"
-  echo "✅ Configured offline profile auto-login & UE5 SystemSettings (VSync, SSR reflections, TSR 67%) in Engine.ini"
+  echo "✅ Configured offline profile auto-login & stable UE5 SystemSettings in Engine.ini"
 fi
 
 # 7. Clean unneeded crash/temp logs in the bottle
