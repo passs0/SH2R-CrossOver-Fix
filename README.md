@@ -33,12 +33,25 @@ When launching *Silent Hill 2 Remake* from CrossOver or its macOS `.app` shortcu
 - Configures `cxmenu.conf` with `"Type" = "raw"` and runs CrossOver's native `cxmenu --install` to register the launch command in `cxmenu_macosx.plist`, then locks `"MenuMode" = "frozen"` in `cxbottle.conf`.
 - Installs `focus_and_hide_cursor.sh`, which polls `CGWindowListCopyWindowInfo` until `SHProto-Win64-Shipping.exe` has created its layer-0 on-screen window, hides `Menu Helper` (`NSRunningApplication.hide()`) so it yields foreground focus, activates the game window, and warps/moves the cursor to trigger UE5 cursor hiding.
 
-### 2. D3D12 Lighting Bugs, Cutscene Freezes & Stutter on 16 GB Apple Silicon Macs
-- **D3D11 (`-dx11`) + DXMT:** Running *Silent Hill 2 Remake* with `-dx11 SAVEWINPOS=1` on **DXMT** avoids Unreal Engine 5's D3D12 Lumen/Nanite pipeline state object (PSO) compilation stalls and indoor lighting glitches on 16 GB Unified Memory Macs while preserving full **High** graphics quality.
-- **Shader Cache Preservation:** Modifies only `FpsCap=Fps60` and `FrameRateLimit=60.000000` in `GameUserSettings.ini` (preserving Windows `CRLF` line endings) without altering scalability group CVars that would force Unreal Engine 5 to recompile shaders mid-level.
+### 2. Low Framerate (~20 FPS Lock) & Unreal Engine 5 Benchmark Overwrites
+On Apple Silicon Macs (such as M2 Pro / M3), two compounding issues can trap the game at an unplayable ~20 FPS:
+- **Double-Buffered VSync Frame Drop:** When VSync is enabled under Wine/DXMT, a missed 33.3ms (30 FPS) frame deadline on a 60Hz/120Hz display causes macOS presentation to instantly quantize down to the next integer divisor: `60 / 3 = 20 FPS`.
+- **UE5 Startup Benchmark Overwrite:** Because Unreal Engine 5 cannot recognize the virtualized GPU vendor under Wine, its startup hardware benchmark frequently defaults or resets `GameUserSettings.ini` back to **Epic** preset (`sg.*=3`) with **100% native resolution** (`sg.ResolutionQuality=100`). At native 1800p with Epic Lumen and heavy volumetric fog, the GPU cannot maintain 30 FPS.
+
+**How `SH2R-CrossOver-Fix` solves it:**
+- Enforces `"CX_GRAPHICS_BACKEND" = "dxmt"` in `cxbottle.conf` for native D3D11-to-Metal translation instead of the slow D3D11-on-D3D12 fallback.
+- Injects authoritative `[SystemSettings]` overrides into `Engine.ini` that cannot be overwritten by UE5's startup benchmark:
+  - `r.VSync=0` — Disables double-buffered VSync quantization.
+  - `r.ScreenPercentage=67` — Locks TSR internal render scale to 67% (Quality mode, rendering ~1200×780 and upscaling cleanly to 1800×1169).
+  - `r.Lumen.ScreenProbeGather.DownsampleFactor=16` & `r.Lumen.DiffuseIndirect.Async=1` — Optimizes Lumen indirect lighting compute passes.
+  - `r.VolumetricFog.GridPixelSizeFactor=16` — Halves volumetric fog shader overhead in outdoor town sections.
+  - `r.Shadow.Virtual.Cache.MaxPageAge=64` & `r.TSR.AsyncCompute=1` — Minimizes virtual shadow map thrashing and schedules TSR on async compute.
+
+### 3. D3D12 Lighting Bugs, Cutscene Freezes & Stutter on 16 GB Apple Silicon Macs
+- **D3D11 (`-dx11`) + DXMT:** Running *Silent Hill 2 Remake* with `-dx11 SAVEWINPOS=1` on **DXMT** avoids Unreal Engine 5's D3D12 Lumen/Nanite pipeline state object (PSO) compilation stalls and indoor lighting glitches on 16 GB Unified Memory Macs.
 - **In-Game Video Cutscenes (`winegstreamer`):** For FMV cutscenes that freeze due to stock CrossOver missing `libgstlibav.dylib` (FFmpeg), pair this fix with **[HexAid](https://github.com/passs0/HexAid)** to upgrade CrossOver's `GStreamer.framework` and `DXMT` in place.
 
-### 3. Persistent "Select a Profile" Prompt on Standalone/Offline Launches
+### 4. Persistent "Select a Profile" Prompt on Standalone/Offline Launches
 When launching the GOG version directly through CrossOver shortcuts without the GOG Galaxy client running in the background, Unreal Engine fails its online identity handshake (which defaults to checking Steam/Galaxy). This causes the game to pause at the start screen on **every single boot** prompting you to "Select a Profile" before it will load your saves.
 - **How it's resolved:** `install.sh` adds `DefaultPlatformService=Null` and `bAutoLogin=true` under `[OnlineSubsystem]` in your bottle's `Engine.ini`. This bypasses online storefront handshakes, auto-authenticates the local player profile, and loads your transferred save games immediately.
 

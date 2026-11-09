@@ -40,7 +40,7 @@ SH2_EXE="$SH2_WIN64_DIR/SHProto-Win64-Shipping.exe"
 
 echo "✅ Found Silent Hill 2 Remake in bottle: $BOTTLE_NAME"
 
-# 1. Build and install sh2_focus helper & ensure ROSETTA_ADVERTISE_AVX=1 in cxbottle.conf
+# 1. Build and install sh2_focus helper & ensure DXMT backend and AVX in cxbottle.conf
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if command -v clang >/dev/null 2>&1; then
   clang -O2 -framework Cocoa -framework Carbon -Wno-deprecated-declarations \
@@ -49,11 +49,17 @@ if command -v clang >/dev/null 2>&1; then
 fi
 cp "$SCRIPT_DIR/scripts/focus_and_hide_cursor.sh" "$TARGET_BOTTLE/focus_and_hide_cursor.sh"
 chmod +x "$TARGET_BOTTLE/focus_and_hide_cursor.sh"
-if [[ -f "$TARGET_BOTTLE/cxbottle.conf" ]] && ! grep -q '"ROSETTA_ADVERTISE_AVX"' "$TARGET_BOTTLE/cxbottle.conf"; then
-  sed -i '' 's/\[EnvironmentVariables\]/[EnvironmentVariables]\
+if [[ -f "$TARGET_BOTTLE/cxbottle.conf" ]]; then
+  if ! grep -q '"ROSETTA_ADVERTISE_AVX"' "$TARGET_BOTTLE/cxbottle.conf"; then
+    sed -i '' 's/\[EnvironmentVariables\]/[EnvironmentVariables]\
 "ROSETTA_ADVERTISE_AVX" = "1"/' "$TARGET_BOTTLE/cxbottle.conf"
+  fi
+  if ! grep -q '"CX_GRAPHICS_BACKEND"' "$TARGET_BOTTLE/cxbottle.conf"; then
+    sed -i '' 's/\[EnvironmentVariables\]/[EnvironmentVariables]\
+"CX_GRAPHICS_BACKEND" = "dxmt"/' "$TARGET_BOTTLE/cxbottle.conf"
+  fi
 fi
-echo "✅ Installed native sh2_focus helper, focus_and_hide_cursor.sh, and verified ROSETTA_ADVERTISE_AVX=1"
+echo "✅ Installed native sh2_focus helper, focus_and_hide_cursor.sh, and verified DXMT backend & AVX"
 
 # 2. Configure cxmenu.conf with Type = raw and -dx11 SAVEWINPOS=1
 ICON_PATH=$(find "$TARGET_BOTTLE/windata/cxmenu/icons/hicolor/256x256" -name "*goggame-2051029707*.png" 2>/dev/null | head -n 1)
@@ -109,7 +115,7 @@ EOF
 done
 echo "✅ Configured CrossOver launcher shortcuts (-dx11 + Auto-Focus + Cursor Hide)"
 
-# 5. Apply 60 FPS cap & balanced TSR/Lumen scalability in GameUserSettings.ini while preserving CRLF
+# 5. Apply 60 FPS cap, disable VSync & configure balanced TSR/Lumen scalability in GameUserSettings.ini
 GUS_INI="$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/Config/Windows/GameUserSettings.ini"
 if [[ -f "$GUS_INI" ]]; then
   python3 -c '
@@ -119,6 +125,9 @@ with open(p, "rb") as f:
     data = f.read().decode("utf-8", errors="ignore")
 data = data.replace("FpsCap=Fps30", "FpsCap=Fps60").replace("FpsCap=Unlimited", "FpsCap=Fps60")
 data = data.replace("FrameRateLimit=30.000000", "FrameRateLimit=60.000000").replace("FrameRateLimit=0.000000", "FrameRateLimit=60.000000")
+data = data.replace("bUseVSync=True", "bUseVSync=False")
+data = data.replace("(\"VSync\", 1)", "(\"VSync\", 0)")
+data = data.replace("VSync=True", "VSync=False")
 data = data.replace("sg.ResolutionQuality=100", "sg.ResolutionQuality=67")
 data = data.replace("sg.GlobalIlluminationQuality=3", "sg.GlobalIlluminationQuality=2")
 data = data.replace("sg.ShadowQuality=3", "sg.ShadowQuality=2")
@@ -132,26 +141,28 @@ data = data.replace("(\"Adv_ResolutionScalability\", 3)", "(\"Adv_ResolutionScal
 with open(p, "wb") as f:
     f.write(data.encode("utf-8"))
 ' "$GUS_INI"
-  echo "✅ Applied 60 FPS cap & balanced TSR/Lumen scalability in GameUserSettings.ini"
+  echo "✅ Applied 60 FPS cap, disabled VSync & balanced TSR/Lumen scalability in GameUserSettings.ini"
 fi
 
-# 6. Bypass "Select a Profile" prompt on launch when playing offline without GOG Galaxy
+# 6. Bypass "Select a Profile" prompt & apply UE5 SystemSettings overrides in Engine.ini
 ENGINE_INI="$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/Config/Windows/Engine.ini"
-if [[ -f "$ENGINE_INI" ]] && ! grep -q '\[OnlineSubsystem\]' "$ENGINE_INI"; then
-  cat >> "$ENGINE_INI" <<'EOF'
+if [[ -f "$ENGINE_INI" ]]; then
+  python3 -c '
+import sys
+p = sys.argv[1]
+with open(p, "rb") as f:
+    data = f.read().decode("utf-8", errors="ignore")
 
-[OnlineSubsystem]
-DefaultPlatformService=Null
-bAutoLogin=true
+if "[OnlineSubsystem]" not in data:
+    data += "\r\n[OnlineSubsystem]\r\nDefaultPlatformService=Null\r\nbAutoLogin=true\r\n\r\n[OnlineSubsystemSteam]\r\nbEnabled=false\r\n\r\n[OnlineSubsystemGOG]\r\nbEnabled=false\r\nbRequireBackendAuthorization=false\r\n"
 
-[OnlineSubsystemSteam]
-bEnabled=false
+if "[SystemSettings]" not in data:
+    data += "\r\n[SystemSettings]\r\nr.VSync=0\r\nr.ScreenPercentage=67\r\nr.DynamicGlobalIlluminationMethod=1\r\nr.Lumen.ScreenProbeGather.DownsampleFactor=16\r\nr.Lumen.DiffuseIndirect.Async=1\r\nr.Shadow.Virtual.Cache.MaxPageAge=64\r\nr.VolumetricFog.GridPixelSizeFactor=16\r\nr.TSR.AsyncCompute=1\r\n"
 
-[OnlineSubsystemGOG]
-bEnabled=false
-bRequireBackendAuthorization=false
-EOF
-  echo "✅ Configured offline profile auto-login in Engine.ini (bypasses 'Select a Profile')"
+with open(p, "wb") as f:
+    f.write(data.encode("utf-8"))
+' "$ENGINE_INI"
+  echo "✅ Configured offline profile auto-login & UE5 SystemSettings (TSR 67%, Lumen & Fog optimizations) in Engine.ini"
 fi
 
 # 7. Clean unneeded crash/temp logs in the bottle
