@@ -109,7 +109,7 @@ EOF
 done
 echo "✅ Configured CrossOver launcher shortcuts (-dx11 + Auto-Focus + Cursor Hide)"
 
-# 5. Apply 60 FPS cap in GameUserSettings.ini while preserving CRLF and existing shader settings
+# 5. Apply 60 FPS cap & balanced TSR/Lumen scalability in GameUserSettings.ini while preserving CRLF
 GUS_INI="$TARGET_BOTTLE/drive_c/users/crossover/AppData/Local/SilentHill2/Saved/Config/Windows/GameUserSettings.ini"
 if [[ -f "$GUS_INI" ]]; then
   python3 -c '
@@ -119,10 +119,20 @@ with open(p, "rb") as f:
     data = f.read().decode("utf-8", errors="ignore")
 data = data.replace("FpsCap=Fps30", "FpsCap=Fps60").replace("FpsCap=Unlimited", "FpsCap=Fps60")
 data = data.replace("FrameRateLimit=30.000000", "FrameRateLimit=60.000000").replace("FrameRateLimit=0.000000", "FrameRateLimit=60.000000")
+data = data.replace("sg.ResolutionQuality=100", "sg.ResolutionQuality=67")
+data = data.replace("sg.GlobalIlluminationQuality=3", "sg.GlobalIlluminationQuality=2")
+data = data.replace("sg.ShadowQuality=3", "sg.ShadowQuality=2")
+data = data.replace("sg.ReflectionQuality=3", "sg.ReflectionQuality=2")
+data = data.replace("sg.ViewDistanceQuality=3", "sg.ViewDistanceQuality=2")
+data = data.replace("sg.PostProcessQuality=3", "sg.PostProcessQuality=2")
+data = data.replace("sg.EffectsQuality=3", "sg.EffectsQuality=2")
+data = data.replace("sg.FoliageQuality=3", "sg.FoliageQuality=2")
+data = data.replace("sg.ShadingQuality=3", "sg.ShadingQuality=2")
+data = data.replace("(\"Adv_ResolutionScalability\", 3)", "(\"Adv_ResolutionScalability\", 2)")
 with open(p, "wb") as f:
     f.write(data.encode("utf-8"))
 ' "$GUS_INI"
-  echo "✅ Applied 60 FPS frame pacing cap in GameUserSettings.ini (existing shader cache preserved)"
+  echo "✅ Applied 60 FPS cap & balanced TSR/Lumen scalability in GameUserSettings.ini"
 fi
 
 # 6. Bypass "Select a Profile" prompt on launch when playing offline without GOG Galaxy
