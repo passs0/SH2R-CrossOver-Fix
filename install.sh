@@ -54,12 +54,14 @@ if [[ -f "$TARGET_BOTTLE/cxbottle.conf" ]]; then
     sed -i '' 's/\[EnvironmentVariables\]/[EnvironmentVariables]\
 "ROSETTA_ADVERTISE_AVX" = "1"/' "$TARGET_BOTTLE/cxbottle.conf"
   fi
-  if ! grep -q '"CX_GRAPHICS_BACKEND"' "$TARGET_BOTTLE/cxbottle.conf"; then
+  if grep -q '"CX_GRAPHICS_BACKEND"' "$TARGET_BOTTLE/cxbottle.conf"; then
+    sed -i '' 's/"CX_GRAPHICS_BACKEND" = "dxmt"/"CX_GRAPHICS_BACKEND" = "d3dmetal"/' "$TARGET_BOTTLE/cxbottle.conf"
+  else
     sed -i '' 's/\[EnvironmentVariables\]/[EnvironmentVariables]\
-"CX_GRAPHICS_BACKEND" = "dxmt"/' "$TARGET_BOTTLE/cxbottle.conf"
+"CX_GRAPHICS_BACKEND" = "d3dmetal"/' "$TARGET_BOTTLE/cxbottle.conf"
   fi
 fi
-echo "✅ Installed native sh2_focus helper, focus_and_hide_cursor.sh, and verified DXMT backend & AVX"
+echo "✅ Installed native sh2_focus helper, focus_and_hide_cursor.sh, and verified D3DMetal (GPTK) backend & AVX"
 
 # 2. Configure cxmenu.conf with Type = raw and -dx11 SAVEWINPOS=1
 ICON_PATH=$(find "$TARGET_BOTTLE/windata/cxmenu/icons/hicolor/256x256" -name "*goggame-2051029707*.png" 2>/dev/null | head -n 1)
@@ -149,6 +151,7 @@ data = data.replace("(\"Adv_ShadowQuality\", 2)", "(\"Adv_ShadowQuality\", 0)")
 data = data.replace("(\"Adv_EffectsQuality\", 2)", "(\"Adv_EffectsQuality\", 1)")
 data = data.replace("(\"Adv_ShadersQuality\", 2)", "(\"Adv_ShadersQuality\", 1)")
 data = data.replace("(\"Adv_Quality\", 2)", "(\"Adv_Quality\", 1)")
+data = data.replace("(\"Adv_LensFlares\", 2)", "(\"Adv_LensFlares\", 0)")
 
 with open(p, "wb") as f:
     f.write(data.encode("utf-8"))
@@ -170,6 +173,7 @@ text = text.replace("<OPTION Name=\"Adv_Quality\" Registered=\"True\" Type=\"Int
 text = text.replace("<OPTION Name=\"Adv_ShadowQuality\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_ShadowQuality\" Registered=\"True\" Type=\"Integer\" Value=\"0\">")
 text = text.replace("<OPTION Name=\"Adv_EffectsQuality\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_EffectsQuality\" Registered=\"True\" Type=\"Integer\" Value=\"1\">")
 text = text.replace("<OPTION Name=\"Adv_ShadersQuality\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_ShadersQuality\" Registered=\"True\" Type=\"Integer\" Value=\"1\">")
+text = text.replace("<OPTION Name=\"Adv_LensFlares\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_LensFlares\" Registered=\"True\" Type=\"Integer\" Value=\"0\">")
 with open(p, "wb") as f:
     f.write(text.encode("utf-16"))
 ' "$XML_SETTINGS"
@@ -189,7 +193,7 @@ if "[OnlineSubsystem]" not in data:
     data += "\r\n[OnlineSubsystem]\r\nDefaultPlatformService=Null\r\nbAutoLogin=true\r\n\r\n[OnlineSubsystemSteam]\r\nbEnabled=false\r\n\r\n[OnlineSubsystemGOG]\r\nbEnabled=false\r\nbRequireBackendAuthorization=false\r\n"
 
 data = re.sub(r"\[SystemSettings\][\r\n]+(?:[^\r\n\[]+[\r\n]+)*", "", data)
-data += "\r\n[SystemSettings]\r\nr.VSync=1\r\nr.VolumetricFog.GridPixelSizeFactor=16\r\nr.DepthOfFieldQuality=0\r\nr.motionblurquality=0\r\nr.SceneColorFringeQuality=0\r\nr.FilmGrain=0\r\n"
+data += "\r\n[SystemSettings]\r\nr.VSync=1\r\nr.VolumetricFog.GridPixelSizeFactor=16\r\nr.DepthOfFieldQuality=0\r\nr.motionblurquality=0\r\nr.SceneColorFringe.Max=0\r\nr.SceneColorFringeQuality=0\r\nr.FilmGrain=0\r\n"
 
 with open(p, "wb") as f:
     f.write(data.encode("utf-8"))
