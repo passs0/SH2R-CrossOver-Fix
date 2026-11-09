@@ -94,38 +94,46 @@ chmod +x install.sh
 - [`install.sh`](install.sh) — One-step installer that compiles `src/sh2_focus.m`, configures `cxmenu.conf`, updates `cxmenu_macosx.plist` via CrossOver's native `cxmenu --install`, updates `.lnk` wrappers, applies the 60 FPS frame-pacing cap, and cleans temporary/crash logs.
 - [`src/sh2_focus.m`](src/sh2_focus.m) — Native compiled Cocoa/Carbon helper that monitors for the game's layer-0 window, hides `CrossOver.app` and `Menu Helper`, brings the game process to the foreground, activates it via window click, and hides the macOS cursor.
 - [`scripts/focus_and_hide_cursor.sh`](scripts/focus_and_hide_cursor.sh) — Shell wrapper that invokes the native `sh2_focus` binary (or falls back to AppleScript).
-- [`scripts/sh2_cheat.py`](scripts/sh2_cheat.py) — Standalone offline save modifier CLI to view game stats and toggle infinite ammo, healing items, NG+ Chainsaw, and difficulty options.
+- [`scripts/sh2_cheat.py`](scripts/sh2_cheat.py) — Standalone offline save modifier and item injector to view save stats, toggle max ammo/health, equip NG+ weapons, and inject any memo, glimpse of the past, ending item, or custom inventory item.
 
 ---
 
-## 🧰 Optional Companion Tool: Offline Save Modifier (Cheats)
+## 🧰 Optional Companion Tool: Offline Save Modifier & Item Injector
 
 Windows memory trainers (*Cheat Engine*, *FLiNG*, *WeMod*) often fail, crash, or freeze under Wine/CrossOver due to restricted macOS debugging entitlements and DXMT/Metal memory conflicts.
 
-Included in [`scripts/sh2_cheat.py`](scripts/sh2_cheat.py) is a **standalone, zero-dependency offline save modifier** written in pure Python 3. It directly parses Unreal Engine 5's compressed `VASb` / `YDBx` GVAS save container and repacks it cleanly while preserving exact byte alignment and generating automatic timestamped backups.
+Included in [`scripts/sh2_cheat.py`](scripts/sh2_cheat.py) is a **standalone, zero-dependency offline save modifier and item injector** written in pure Python 3. It directly parses Unreal Engine 5's compressed `VASb` / `YDBx` GVAS save container and repacks it cleanly while preserving exact byte alignment and generating automatic timestamped backups.
 
 ### Features
 - 🔫 **Infinite Ammo**: Sets Handgun, Shotgun, and Hunting Rifle ammo to 9,999.
-- ❤️ **Infinite Healing**: Sets Health Drinks and Syringes to 999.
-- 🪚 **NG+ Chainsaw Early Access**: Safely swaps the Iron Pipe for the Chainsaw in inventory.
-- 📖 **100% Archival Rate (Book of Lost Memories)**: Safely injects the NG+ memo *Book of Lost Memories* (`LhOW_LostMemories_Note`) into the memo tracker, inventory, and skip-investigation lists for 100% Archival completion.
-- ⚔️ **Pyramid Head Control**: Toggle Pyramid Head between normal aggressive mode and pacified ignore mode.
-- 🛡️ **Automatic Safety Backups**: Creates `.sav.bak_<timestamp>` before making changes; one-command rollback with `--restore`.
+- ❤️ **Infinite Healing**: Sets Health Drinks and Syringes to 999; restores player HP to 100%.
+- 🪚 **NG+ Chainsaw Early Access**: Safely equip the Chainsaw in inventory or revert to the Iron Pipe.
+- 📖 **100% Archivist Trophy (All 70 Memos)**: Injects all 70 notes and documents across both regular and New Game+ playthroughs into the memo tracker, inventory, and skip-investigation lists.
+- 👁️ **100% Echoes Trophy (All 26 Glimpses)**: Injects all 26 environmental flashback GUIDs from the 2001 classic.
+- 🔑 **Complete Ending Items**: Injects key items for all 8 game endings (Rebirth, Dog, UFO, Bliss, Stillness, Leave, Maria, In Water).
+- 📷 **All 26 Strange Photos**: Injects all photos for the *Pieces Unarranged* trophy.
+- 🔍 **Custom & Granular Injections**: Selectively inject individual memos, glimpses, ending packs, or any arbitrary item row name and quantity.
+- 🛡️ **Safe & Opt-in**: All cheats and injections are toggled **OFF by default** in the interactive menu; creates automatic `.sav.bak_<timestamp>` backups before making any changes.
 
 ### Usage
 
 ```zsh
-# View current save file stats and inventory
+# View current save file stats, collectibles, and ending readiness
 python3 scripts/sh2_cheat.py --status
 
-# Interactive menu to toggle individual cheats
+# Interactive menu (all toggles OFF by default, select what you want)
 python3 scripts/sh2_cheat.py
 
-# Inject Book of Lost Memories into latest save without touching player inventory/stats
-python3 scripts/sh2_cheat.py --inject-book
+# Inject all collectibles & ending items
+python3 scripts/sh2_cheat.py --all-memos --all-glimpses --all-endings
 
-# Instant one-click apply to latest save
-python3 scripts/sh2_cheat.py --apply
+# Inject max firepower (9,999 ammo + 999 healing + Chainsaw)
+python3 scripts/sh2_cheat.py --ammo --health --max-hp --chainsaw
+
+# Inject specific items or memos individually
+python3 scripts/sh2_cheat.py --inject-memo LhOW_LostMemories_Note
+python3 scripts/sh2_cheat.py --inject-glimpse 24
+python3 scripts/sh2_cheat.py --inject-item End_Dog_Key_Full 1
 
 # Restore previous backup
 python3 scripts/sh2_cheat.py --restore

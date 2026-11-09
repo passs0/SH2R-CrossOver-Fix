@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Silent Hill 2 Remake - Save Cheat CLI
-A clean, one-time offline save modifier to toggle cheats on or off.
+Silent Hill 2 Remake - Save Cheat & Item Injector CLI
+A clean, modular offline save modifier to inspect, toggle cheats, and inject any
+memo, glimpse of the past, ending item, weapon, or arbitrary game item.
 """
 
 import sys
@@ -42,6 +43,143 @@ DEFAULT_SAVE_DIR = find_save_dir()
 PROPERTY_HEADER = b"Quantity\x00\x0c\x00\x00\x00IntProperty\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00"
 HEALTH_HEADER = b"HealthValue\x00\x0e\x00\x00\x00FloatProperty\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00"
 
+ALL_GLIMPSES = [
+    ("cb79a1a402597b48bf9f447532e175d0", "Glimpse #01 - Observation Deck Path"),
+    ("2e3b6ffad031c34fa9e28022b74b5881", "Glimpse #02 - Silent Hill Entrance Trail"),
+    ("876ee3c6fa5df1438786be750c84fce9", "Glimpse #03 - East South Vale Cemetery"),
+    ("9dbcf3152db409419645721c0c487e21", "Glimpse #04 - Martin Street Alleyway"),
+    ("348b1421262ee145bfbc51c834e41084", "Glimpse #05 - Katz Street Roadblock"),
+    ("5d673b2f089c594393ecb1d3899c57a1", "Glimpse #06 - Wood Side Apartments Garbage Chute"),
+    ("68e1b0e451972e4798e5e376ade911e2", "Glimpse #07 - Wood Side Apartments Room 213"),
+    ("32d003c840c4714f8e240dce2ad6fceb", "Glimpse #08 - Blue Creek Apartments Clock Room"),
+    ("cb4be69d9800734cbcb8e631c7c035e4", "Glimpse #09 - Blue Creek Apartments Room 109"),
+    ("6f8ce80c6e7a3d41bb3c4bae4e48a7f2", "Glimpse #10 - Rosewater Park Pier"),
+    ("676e1484b75c6747a4da3ab3a8fadc9e", "Glimpse #11 - Rosewater Park Statue"),
+    ("434572a42998414abf12f80462e63067", "Glimpse #12 - Brookhaven Hospital Entrance"),
+    ("51dccdbd4cacf248be354791ac5804b7", "Glimpse #13 - Brookhaven Hospital Examination Room"),
+    ("e1853cd42ccf7340bba56f19b2522635", "Glimpse #14 - Brookhaven Hospital Basement"),
+    ("e9aca85caf4518419b32068d14e5b00c", "Glimpse #15 - Brookhaven Hospital Otherworld Rooftop"),
+    ("e9e189e223625947b728a10c5b0d76ce", "Glimpse #16 - West South Vale Historical Society Gate"),
+    ("1fb122ed91a05544ba03e6d07dddcf08", "Glimpse #17 - Silent Hill Historical Society Gallery"),
+    ("72902cd28bd2a94a982fb30dac10428b", "Glimpse #18 - Toluca Prison Shower Room"),
+    ("dcac4e89d8e89d4f96ff1143c425a0c9", "Glimpse #19 - Toluca Prison Execution Yard"),
+    ("28a9d98e12ed534a9f2dad930032a6b3", "Glimpse #20 - Labyrinth Despair Hallway"),
+    ("f22c569015175243a78acaeab547c6a2", "Glimpse #21 - Labyrinth Rotten Area Room"),
+    ("a985c7907a3f7d47a64fea1cea53ba29", "Glimpse #22 - Toluca Lake Dock Pier"),
+    ("186e97749af94a4189a15e347187e045", "Glimpse #23 - Lakeview Hotel Pier Boat"),
+    ("45400dbd15b0b840914b82ad9bd25049", "Glimpse #24 - Lakeview Hotel Garden"),
+    ("688d251f1fcb7546905d79c4e430324b", "Glimpse #25 - Lakeview Hotel Reading Room"),
+    ("cb7cf6d325ee794f8c27bdb6a7291e78", "Glimpse #26 - Lakeview Hotel Employee Stairwell"),
+]
+
+ALL_MEMOS = [
+    "EcFW_BackRoomNote",
+    "EcFW_BigJaysNote",
+    "EcFW_Blockage_Note",
+    "EcFW_CamperNote_Hard",
+    "EcFW_FlowerShopNote",
+    "EcFW_GrandMarketCodeNote",
+    "EcFW_GroovyMusicNote",
+    "EcFW_MartinStBody_Note",
+    "EcFW_Matchbox",
+    "EcFW_MotorHomeNote",
+    "EcFW_NeelysBarNote",
+    "EcFW_OldMap",
+    "EcFW_SandersStBody_Note",
+    "EcFW_SaulApt_Lobby_Note",
+    "EcFW_SaulStBody_Note1",
+    "EcFW_SaulStBody_Note2",
+    "EcFW_SaulStBody_Note3",
+    "EcFW_TenantsNote",
+    "EcFW_TexansFlyer",
+    "EcOW_LetterTrailer",
+    "EcOW_LetterWrench",
+    "End_Bliss_Bowling_Note",
+    "End_Bliss_Nathan_Note_FirstGame",
+    "End_Bliss_Nathan_Note_NG+",
+    "HosFW_CodeLocation_Note",
+    "HosFW_HeadNursesNote_Hard",
+    "HosFW_HospitalSafeNote",
+    "HosFW_KeyLockerNote",
+    "HosFW_PatientFile1_Note",
+    "HosFW_PatientFile2_Note",
+    "HosFW_PatientFile3_Note",
+    "HosFW_PatientNo22Note",
+    "HosFW_PatientNo30Note",
+    "HosFW_PatientNo48Note",
+    "HosFW_RooftopDiaryPageNote",
+    "HosFW_SecurityGuardNoteHard",
+    "HosFW_Xray_Note",
+    "HosOW_Director_Note1",
+    "HosOW_Director_Note2",
+    "HosOW_Director_Note3",
+    "HosOW_Director_Note4",
+    "HosOW_Electroshock_Note1",
+    "HosOW_Electroshock_Note2",
+    "HosOW_Evaluation_Note",
+    "HosOW_Lobotomy_Note",
+    "LhFW_CleanUp_Note",
+    "LhOW_CleanGardenNote",
+    "LhOW_CleanHotelRoomNote",
+    "LhOW_CleanUpNote",
+    "LhOW_LaurasLetter",
+    "LhOW_LostMemories_Note",
+    "LhOW_ManagerOfficeKeypadNote",
+    "LhOW_Polariod_01_Hard",
+    "LhOW_Polaroid_02_Hard",
+    "LhOW_Polaroid_03_Hard",
+    "LhOW_RecepcionistMemo",
+    "PriOW_Boar_Disease_Note3",
+    "PriOW_Boar_Prisoner_On_Guards_Note",
+    "PriOW_Dove_Kidnapper_Note",
+    "PriOW_Ox_Assaulter_Bathroom_Note",
+    "PriOW_Ox_Assaulter_Cell_Note",
+    "PriOW_Ox_Guards_Noticing_Stalker",
+    "PriOW_Ox_Isolation_Cell_Note",
+    "PriOW_Photo_Murderer",
+    "PriOW_Rifle_Hint",
+    "WcFW_Code_Note_Hard",
+    "WcFW_Reception_Note",
+    "WsaFW_Gun_Note",
+    "WsaFW_Surface_Note1",
+    "WsaFW_Surface_Note2",
+]
+
+ENDING_ITEMS = {
+    "Rebirth Ending (NG+)": [
+        ("End_Reb_CrimsonCeremony", "Crimson Ceremony Book"),
+        ("End_Reb_WhiteChrism", "White Chrism Bottle"),
+        ("End_Reb_ObsidianGoblet", "Obsidian Goblet"),
+        ("LhOW_LostMemories_Note", "Book of Lost Memories"),
+    ],
+    "Dog Ending (NG+)": [
+        ("End_Dog_Key_Full", "Dog Key (Observation Room)"),
+    ],
+    "UFO Ending (NG+)": [
+        ("End_UFO_ChannelingStone", "Blue Gem / Channeling Stone"),
+    ],
+    "Bliss Ending (NG+)": [
+        ("End_Bliss_RustedKey", "Rusted Key"),
+        ("End_Bliss_SmallChest", "Small Chest (White Claudia)"),
+    ],
+    "Stillness Ending (NG+)": [
+        ("End_Silence_KeyofSorrow", "Key of Sorrow"),
+        ("End_Silence_Postcard", "Toluca Postcard"),
+    ],
+    "Standard Endings (Leave / Maria / In Water)": [
+        ("LetterFromMary2", "Mary's Letter"),
+        ("PhotoOfMary", "Photo of Mary"),
+        ("BcaOW_AngelasKnife", "Angela's Knife"),
+    ],
+    "Hotel Fast-Track": [
+        ("LhOW_312Key", "Room 312 Key"),
+        ("LhOW_VideoTape", "Videotape"),
+        ("LhOW_ThirdFloorCorridorKey", "3F Corridor Key"),
+    ],
+}
+
+ALL_STRANGE_PHOTOS = [f"Reflections_Photo_{i}" for i in range(1, 27)]
+
 def get_latest_save(save_dir=DEFAULT_SAVE_DIR):
     if not os.path.isdir(save_dir):
         return None
@@ -72,7 +210,6 @@ def read_decompressed(save_path):
     return raw_data, ydbx_idx, decomp
 
 def write_repacked(save_path, raw_data, ydbx_idx, decomp):
-    # Create safety backup
     bak_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_path = f"{save_path}.bak_{bak_time}"
     shutil.copy2(save_path, backup_path)
@@ -152,7 +289,6 @@ def get_weapon_status(decomp):
 def set_weapon(decomp, to_chainsaw=True):
     pipe = b"\t\x00\x00\x00IronPipe\x00"
     saw = b"\t\x00\x00\x00Chainsaw\x00"
-    
     from_pat = pipe if to_chainsaw else saw
     to_pat = saw if to_chainsaw else pipe
 
@@ -167,125 +303,165 @@ def set_weapon(decomp, to_chainsaw=True):
         return True
     return False
 
-def get_pyramid_head_status(decomp):
-    import re
-    for m in re.finditer(b"PyramidHead_Sword_AI_C", decomp):
-        pos = m.start()
-        ign_pos = decomp.find(b"_IgnoreAll\x00\r\x00\x00\x00BoolProperty", pos)
-        if ign_pos != -1 and (ign_pos - pos) < 500:
-            val_off = ign_pos + len(b"_IgnoreAll\x00\r\x00\x00\x00BoolProperty\x00\x00\x00\x00\x00\x00\x00\x00\x00")
-            return "Pacified (Ignoring)" if decomp[val_off] == 1 else "Active & Hostile"
-    return "Not in current area"
-
-def set_pyramid_head_pacify(decomp, pacify=False):
-    import re
-    val = 1 if pacify else 0
-    count = 0
-    for m in re.finditer(b"PyramidHead_Sword_AI_C", decomp):
-        pos = m.start()
-        ign_pos = decomp.find(b"_IgnoreAll\x00\r\x00\x00\x00BoolProperty", pos)
-        if ign_pos != -1 and (ign_pos - pos) < 500:
-            val_off = ign_pos + len(b"_IgnoreAll\x00\r\x00\x00\x00BoolProperty\x00\x00\x00\x00\x00\x00\x00\x00\x00")
-            decomp[val_off] = val
-            count += 1
-    return count
-
-def get_enemies_pacified_status(decomp):
-    prefix = b"_IgnoreAll\x00\r\x00\x00\x00BoolProperty\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-    pos = 0
-    total = 0
-    pacified = 0
-    while True:
-        pos = decomp.find(prefix, pos)
-        if pos == -1:
-            break
-        chunk = decomp[max(0, pos-400):pos]
-        if b"Human_AI" not in chunk:
-            total += 1
-            if decomp[pos + len(prefix)] == 1:
-                pacified += 1
-        pos += len(prefix)
-    if total == 0:
-        return "No enemies in save state"
-    elif pacified == total:
-        return f"Pacified ({pacified}/{total} ignoring)"
-    elif pacified > 0:
-        return f"Partially Pacified ({pacified}/{total} ignoring)"
-    else:
-        return f"Active & Hostile ({total} enemies)"
-
-def set_all_enemies_pacify(decomp, pacify=False):
-    prefix = b"_IgnoreAll\x00\r\x00\x00\x00BoolProperty\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-    val = 1 if pacify else 0
-    pos = 0
-    count = 0
-    while True:
-        pos = decomp.find(prefix, pos)
-        if pos == -1:
-            break
-        chunk = decomp[max(0, pos-400):pos]
-        if b"Human_AI" not in chunk:
-            decomp[pos + len(prefix)] = val
-            count += 1
-        pos += len(prefix)
-    return count
-
-def has_lost_memories(decomp):
-    return b"LhOW_LostMemories_Note" in decomp
-
-def inject_lost_memories(decomp):
-    if has_lost_memories(decomp):
-        return False, "Already present in save"
-
-    name_entry = b"\x17\x00\x00\x00LhOW_LostMemories_Note\x00"
-    collected_entry = (
-        b"\x0c\x00\x00\x00ItemRowName\x00\r\x00\x00\x00NameProperty\x00\x1b\x00\x00\x00\x00\x00\x00\x00\x00"
-        b"\x17\x00\x00\x00LhOW_LostMemories_Note\x00"
-        b"\t\x00\x00\x00Quantity\x00\x0c\x00\x00\x00IntProperty\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00"
-        b"\x01\x00\x00\x00"
+def make_collected_item_struct(item_name, quantity=1):
+    name_bytes = item_name.encode("ascii") + b"\x00"
+    prop_size = len(name_bytes) + 4
+    entry = (
+        b"\x0c\x00\x00\x00ItemRowName\x00"
+        b"\r\x00\x00\x00NameProperty\x00" +
+        struct.pack("<Q", prop_size) +
+        b"\x00" +
+        struct.pack("<I", len(name_bytes)) +
+        name_bytes +
+        b"\t\x00\x00\x00Quantity\x00\x0c\x00\x00\x00IntProperty\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00" +
+        struct.pack("<I", quantity) +
         b"\x05\x00\x00\x00None\x00"
     )
+    return entry
 
-    # 1. MemosItemsPickedUp (master memo achievement tracker)
-    memo_pos = decomp.find(b"\x13\x00\x00\x00MemosItemsPickedUp\x00")
-    if memo_pos != -1:
-        memo_ds_pos = memo_pos + 41
-        memo_cnt_pos = memo_pos + 67
-        old_ds = struct.unpack("<Q", decomp[memo_ds_pos:memo_ds_pos+8])[0]
-        old_cnt = struct.unpack("<I", decomp[memo_cnt_pos:memo_cnt_pos+4])[0]
-        insert_pos_memo = memo_cnt_pos + old_ds
-        decomp[memo_ds_pos:memo_ds_pos+8] = struct.pack("<Q", old_ds + len(name_entry))
-        decomp[memo_cnt_pos:memo_cnt_pos+4] = struct.pack("<I", old_cnt + 1)
-        decomp[insert_pos_memo:insert_pos_memo] = name_entry
+def inject_collected_item(decomp, item_name, quantity=1):
+    name_bytes = item_name.encode("ascii") + b"\x00"
+    name_entry = struct.pack("<I", len(name_bytes)) + name_bytes
 
-    # 2. SkipInvestigationItems (prevents camera lock / inspection loop)
+    # 1. SkipInvestigationItems
     sii_pos = decomp.find(b"\x17\x00\x00\x00SkipInvestigationItems\x00")
     if sii_pos != -1:
         sii_ds_pos = sii_pos + 45
         sii_cnt_pos = sii_pos + 71
-        old_sii_ds = struct.unpack("<Q", decomp[sii_ds_pos:sii_ds_pos+8])[0]
-        old_sii_cnt = struct.unpack("<I", decomp[sii_cnt_pos:sii_cnt_pos+4])[0]
-        insert_pos_sii = sii_cnt_pos + old_sii_ds
-        decomp[sii_ds_pos:sii_ds_pos+8] = struct.pack("<Q", old_sii_ds + len(name_entry))
-        decomp[sii_cnt_pos:sii_cnt_pos+4] = struct.pack("<I", old_sii_cnt + 1)
-        decomp[insert_pos_sii:insert_pos_sii] = name_entry
+        old_ds = struct.unpack("<Q", decomp[sii_ds_pos:sii_ds_pos+8])[0]
+        old_cnt = struct.unpack("<I", decomp[sii_cnt_pos:sii_cnt_pos+4])[0]
+        sii_payload = decomp[sii_cnt_pos+4:sii_cnt_pos+old_ds]
+        if name_entry not in sii_payload:
+            decomp[sii_ds_pos:sii_ds_pos+8] = struct.pack("<Q", old_ds + len(name_entry))
+            decomp[sii_cnt_pos:sii_cnt_pos+4] = struct.pack("<I", old_cnt + 1)
+            insert_pos_sii = sii_cnt_pos + old_ds
+            decomp[insert_pos_sii:insert_pos_sii] = name_entry
 
-    # 3. CollectedItems (inventory array)
+    # 2. CollectedItems
     ci_pos = decomp.find(b"\x0f\x00\x00\x00CollectedItems\x00")
-    if ci_pos != -1:
-        ci_ads_pos = ci_pos + 37
-        ci_cnt_pos = ci_pos + 65
-        ci_sds_pos = ci_pos + 107
-        old_ads = struct.unpack("<Q", decomp[ci_ads_pos:ci_ads_pos+8])[0]
-        old_cnt = struct.unpack("<I", decomp[ci_cnt_pos:ci_cnt_pos+4])[0]
-        old_sds = struct.unpack("<Q", decomp[ci_sds_pos:ci_sds_pos+8])[0]
-        insert_pos_ci = ci_pos + 115 + 24 + 17 + old_sds
-        decomp[ci_ads_pos:ci_ads_pos+8] = struct.pack("<Q", old_ads + len(collected_entry))
-        decomp[ci_cnt_pos:ci_cnt_pos+4] = struct.pack("<I", old_cnt + 1)
-        decomp[ci_sds_pos:ci_sds_pos+8] = struct.pack("<Q", old_sds + len(collected_entry))
-        decomp[insert_pos_ci:insert_pos_ci] = collected_entry
+    if ci_pos == -1:
+        return False, "CollectedItems array not found in save"
 
-    return True, "Injected into CollectedItems, SkipInvestigationItems, and MemosItemsPickedUp"
+    ci_ads_pos = ci_pos + 37
+    ci_cnt_pos = ci_pos + 65
+    ci_sds_pos = ci_pos + 107
+    old_ads = struct.unpack("<Q", decomp[ci_ads_pos:ci_ads_pos+8])[0]
+    old_cnt = struct.unpack("<I", decomp[ci_cnt_pos:ci_cnt_pos+4])[0]
+    old_sds = struct.unpack("<Q", decomp[ci_sds_pos:ci_sds_pos+8])[0]
+
+    items_payload = decomp[ci_pos+115+24+17:ci_pos+115+24+17+old_sds]
+    if name_bytes in items_payload:
+        set_item_quantity(decomp, item_name, quantity)
+        return True, "Already in inventory (updated quantity)"
+
+    entry = make_collected_item_struct(item_name, quantity)
+    decomp[ci_ads_pos:ci_ads_pos+8] = struct.pack("<Q", old_ads + len(entry))
+    decomp[ci_cnt_pos:ci_cnt_pos+4] = struct.pack("<I", old_cnt + 1)
+    decomp[ci_sds_pos:ci_sds_pos+8] = struct.pack("<Q", old_sds + len(entry))
+    insert_pos_ci = ci_pos + 115 + 24 + 17 + old_sds
+    decomp[insert_pos_ci:insert_pos_ci] = entry
+
+    return True, f"Injected {item_name} (Qty: {quantity})"
+
+def inject_memo(decomp, memo_name):
+    name_bytes = memo_name.encode("ascii") + b"\x00"
+    name_entry = struct.pack("<I", len(name_bytes)) + name_bytes
+
+    m_pos = decomp.find(b"\x13\x00\x00\x00MemosItemsPickedUp\x00")
+    if m_pos != -1:
+        m_ds_pos = m_pos + 41
+        m_cnt_pos = m_pos + 67
+        old_ds = struct.unpack("<Q", decomp[m_ds_pos:m_ds_pos+8])[0]
+        old_cnt = struct.unpack("<I", decomp[m_cnt_pos:m_cnt_pos+4])[0]
+        memos_payload = decomp[m_cnt_pos+4:m_cnt_pos+old_ds]
+        if name_entry not in memos_payload:
+            decomp[m_ds_pos:m_ds_pos+8] = struct.pack("<Q", old_ds + len(name_entry))
+            decomp[m_cnt_pos:m_cnt_pos+4] = struct.pack("<I", old_cnt + 1)
+            insert_pos_m = m_cnt_pos + old_ds
+            decomp[insert_pos_m:insert_pos_m] = name_entry
+
+    inject_collected_item(decomp, memo_name, quantity=1)
+    return True, f"Injected Memo: {memo_name}"
+
+def inject_glimpse(decomp, guid_bytes):
+    if isinstance(guid_bytes, str):
+        guid_bytes = bytes.fromhex(guid_bytes)
+
+    g_pos = decomp.find(b"\x0f\x00\x00\x00GlimpsesOfPast\x00")
+    if g_pos == -1:
+        return False, "GlimpsesOfPast array not found in save"
+
+    g_cnt = struct.unpack("<I", decomp[g_pos+19:g_pos+23])[0]
+    existing_guids = decomp[g_pos+23:g_pos+23+g_cnt*16]
+    if guid_bytes in existing_guids:
+        return False, "Glimpse already registered in save"
+
+    decomp[g_pos+19:g_pos+23] = struct.pack("<I", g_cnt + 1)
+    insert_pos_g = g_pos + 23 + g_cnt * 16
+    decomp[insert_pos_g:insert_pos_g] = guid_bytes
+    return True, f"Injected Glimpse {guid_bytes.hex()}"
+
+def get_save_stats(decomp):
+    hp = get_player_health(decomp)
+    hg = get_item_quantity(decomp, "HandgunAmmo") or 0
+    sg = get_item_quantity(decomp, "ShotgunAmmo") or 0
+    rf = get_item_quantity(decomp, "RifleAmmo") or 0
+    hd = get_item_quantity(decomp, "HealthDrink") or 0
+    syr = get_item_quantity(decomp, "Syringe") or 0
+    wpn = get_weapon_status(decomp)
+
+    m_cnt = 0
+    m_pos = decomp.find(b"\x13\x00\x00\x00MemosItemsPickedUp\x00")
+    if m_pos != -1:
+        m_cnt = struct.unpack("<I", decomp[m_pos+67:m_pos+71])[0]
+
+    g_cnt = 0
+    g_pos = decomp.find(b"\x0f\x00\x00\x00GlimpsesOfPast\x00")
+    if g_pos != -1:
+        g_cnt = struct.unpack("<I", decomp[g_pos+19:g_pos+23])[0]
+
+    end_items_cnt = 0
+    total_end_items = 0
+    for cat_items in ENDING_ITEMS.values():
+        for item_id, _ in cat_items:
+            total_end_items += 1
+            if item_id.encode() in decomp:
+                end_items_cnt += 1
+
+    return {
+        "hp": hp,
+        "hg": hg,
+        "sg": sg,
+        "rf": rf,
+        "hd": hd,
+        "syr": syr,
+        "wpn": wpn,
+        "m_cnt": m_cnt,
+        "g_cnt": g_cnt,
+        "end_items_cnt": end_items_cnt,
+        "total_end_items": total_end_items,
+    }
+
+def print_status(save_path):
+    raw_data, ydbx_idx, decomp = read_decompressed(save_path)
+    fname = os.path.basename(save_path)
+    mtime = datetime.fromtimestamp(os.path.getmtime(save_path)).strftime("%Y-%m-%d %H:%M:%S")
+    stats = get_save_stats(decomp)
+
+    hp_str = f"{stats['hp']:.0f} / 100" if stats["hp"] is not None else "Unknown"
+    print(f"\n📂 Target Save: {fname} (Modified: {mtime})")
+    print("-" * 52)
+    print(f"  ❤️  Player Health       : {hp_str}")
+    print(f"  ❤️  Health Drinks       : {stats['hd']}")
+    print(f"  ❤️  Syringes            : {stats['syr']}")
+    print(f"  🔫  Handgun Ammo        : {stats['hg']}")
+    print(f"  🔫  Shotgun Ammo        : {stats['sg']}")
+    print(f"  🔫  Hunting Rifle Ammo  : {stats['rf']}")
+    print(f"  🪚  Equipped Melee      : {stats['wpn']}")
+    print(f"  📖  Memos (Archivist)   : {stats['m_cnt']} / 70")
+    print(f"  👁️  Glimpses (Echoes)   : {stats['g_cnt']} / 26")
+    print(f"  🔑  Ending/Key Items    : {stats['end_items_cnt']} / {stats['total_end_items']}")
+    print("-" * 52)
 
 def restore_latest_backup(save_dir=DEFAULT_SAVE_DIR):
     saves = glob.glob(os.path.join(save_dir, "SaveGameData_*.sav.bak_*"))
@@ -298,126 +474,224 @@ def restore_latest_backup(save_dir=DEFAULT_SAVE_DIR):
     print(f"🛡️  Restored {os.path.basename(base_name)} from {os.path.basename(latest_bak)}")
     return True
 
-def apply_cheats(save_path, ammo=True, health=True, chainsaw=True, pacify_ph=False, pacify_all=False, inject_book=False):
+def apply_cheats(
+    save_path,
+    ammo=False,
+    health=False,
+    max_hp=False,
+    chainsaw=None,
+    all_memos=False,
+    all_glimpses=False,
+    all_endings=False,
+    all_photos=False,
+    custom_items=None,
+    custom_memos=None,
+    custom_glimpses=None,
+):
     raw_data, ydbx_idx, decomp = read_decompressed(save_path)
     fname = os.path.basename(save_path)
-    print(f"\n📂 Applying to: {fname}")
-    print("-" * 50)
+    print(f"\n📂 Applying modifications to: {fname}")
+    print("-" * 52)
 
-    # Ammo
+    changes_made = 0
+
     if ammo:
         for item in ["HandgunAmmo", "ShotgunAmmo", "RifleAmmo"]:
             set_item_quantity(decomp, item, 9999)
-        print("  🔫  Ammo (Handgun, Shotgun, Rifle) : 9,999 [ON]")
-    else:
-        print("  🔫  Ammo                          : Unchanged [OFF]")
+        print("  🔫  Ammo (Handgun, Shotgun, Rifle) : 9,999 [APPLIED]")
+        changes_made += 1
 
-    # Health Items & Restoration
     if health:
-        set_player_health(decomp, 100.0)
         for item in ["HealthDrink", "Syringe"]:
             set_item_quantity(decomp, item, 999)
-        print("  ❤️  Health (HP & 999 Healing Items): 100% Full + 999 Drinks/Syringes [ON]")
-    else:
-        print("  ❤️  Health Items                   : Unchanged [OFF]")
+        print("  ❤️  Healing Items (Drinks/Syringes): 999 [APPLIED]")
+        changes_made += 1
 
-    # Chainsaw
+    if max_hp:
+        set_player_health(decomp, 100.0)
+        print("  ❤️  Player Health                   : 100% Full [APPLIED]")
+        changes_made += 1
+
     if chainsaw is True:
         set_weapon(decomp, to_chainsaw=True)
-        print("  🪚  Melee Weapon                   : NG+ Chainsaw [ON]")
+        print("  🪚  Melee Weapon                   : NG+ Chainsaw [APPLIED]")
+        changes_made += 1
     elif chainsaw is False:
         set_weapon(decomp, to_chainsaw=False)
         print("  🦯  Melee Weapon                   : Iron Pipe [RESTORED]")
-    else:
-        print("  🪚  Melee Weapon                   : Unchanged [OFF]")
+        changes_made += 1
 
-    # Pyramid Head
-    if pacify_ph is True:
-        set_pyramid_head_pacify(decomp, pacify=True)
-        print("  ⚔️  Pyramid Head                   : Pacified (Ignore Mode) [ON]")
-    elif pacify_ph is False:
-        set_pyramid_head_pacify(decomp, pacify=False)
-        print("  ⚔️  Pyramid Head                   : Active & Hostile [NORMAL]")
-    else:
-        print("  ⚔️  Pyramid Head                   : Unchanged [OFF]")
+    if all_memos:
+        count = 0
+        for m in ALL_MEMOS:
+            inject_memo(decomp, m)
+            count += 1
+        print(f"  📖  All Memos (Archivist Trophy)   : 70/70 Injected [APPLIED]")
+        changes_made += 1
 
-    # All Enemies
-    if pacify_all is True:
-        count = set_all_enemies_pacify(decomp, pacify=True)
-        print(f"  👻  All Enemies                    : Pacified ({count} ignoring player) [ON]")
-    elif pacify_all is False:
-        count = set_all_enemies_pacify(decomp, pacify=False)
-        print(f"  👾  All Enemies                    : Active & Hostile ({count} enemies) [NORMAL]")
-    else:
-        print("  👾  All Enemies                    : Unchanged [OFF]")
+    if all_glimpses:
+        count = 0
+        for guid_hex, _ in ALL_GLIMPSES:
+            ok, _ = inject_glimpse(decomp, guid_hex)
+            if ok:
+                count += 1
+        print(f"  👁️  All Glimpses of the Past       : 26/26 Flashbacks Injected [APPLIED]")
+        changes_made += 1
 
-    # Book of Lost Memories
-    if inject_book:
-        ok, msg = inject_lost_memories(decomp)
-        if ok:
-            print("  📖  Book of Lost Memories          : Injected (100% Archival Rate) [ON]")
-        else:
-            print(f"  📖  Book of Lost Memories          : {msg}")
+    if all_endings:
+        count = 0
+        for cat, items in ENDING_ITEMS.items():
+            for item_id, _ in items:
+                inject_collected_item(decomp, item_id, quantity=1)
+                count += 1
+        print(f"  🔑  All Key & Ending Items         : Complete for all 8 endings [APPLIED]")
+        changes_made += 1
 
-    print("-" * 50)
+    if all_photos:
+        for p in ALL_STRANGE_PHOTOS:
+            inject_collected_item(decomp, p, quantity=1)
+        print(f"  📷  All Strange Photos             : 26/26 Injected [APPLIED]")
+        changes_made += 1
+
+    if custom_items:
+        for item_name, qty in custom_items:
+            inject_collected_item(decomp, item_name, quantity=qty)
+            print(f"  📦  Custom Item                    : {item_name} (x{qty}) [APPLIED]")
+            changes_made += 1
+
+    if custom_memos:
+        for memo_name in custom_memos:
+            inject_memo(decomp, memo_name)
+            print(f"  📝  Custom Memo                    : {memo_name} [APPLIED]")
+            changes_made += 1
+
+    if custom_glimpses:
+        for g in custom_glimpses:
+            ok, msg = inject_glimpse(decomp, g)
+            print(f"  👁️  Custom Glimpse                 : {msg} [APPLIED]")
+            changes_made += 1
+
+    if changes_made == 0:
+        print("  ℹ️  No changes selected. Save file left untouched.")
+        return None
+
+    print("-" * 52)
     bak = write_repacked(save_path, raw_data, ydbx_idx, decomp)
     print(f"🛡️  Backup created: {os.path.basename(bak)}")
     print(f"✅ {fname} updated successfully! Ready to load.")
+    return bak
 
-def print_status(save_path):
-    raw_data, ydbx_idx, decomp = read_decompressed(save_path)
-    fname = os.path.basename(save_path)
-    mtime = datetime.fromtimestamp(os.path.getmtime(save_path)).strftime('%Y-%m-%d %H:%M:%S')
-
-    print(f"\n📂 Target Save: {fname} (Modified: {mtime})")
-    print("-" * 50)
-    hp = get_player_health(decomp)
-    hg = get_item_quantity(decomp, "HandgunAmmo") or 0
-    sg = get_item_quantity(decomp, "ShotgunAmmo") or 0
-    rf = get_item_quantity(decomp, "RifleAmmo") or 0
-    hd = get_item_quantity(decomp, "HealthDrink") or 0
-    syr = get_item_quantity(decomp, "Syringe") or 0
-    wpn = get_weapon_status(decomp)
-    ph = get_pyramid_head_status(decomp)
-    enemies = get_enemies_pacified_status(decomp)
-    book = "Present in Save" if has_lost_memories(decomp) else "Missing"
-
-    hp_str = f"{hp:.0f} / 100" if hp is not None else "Unknown"
-    print(f"  ❤️  Player Health   : {hp_str}")
-    print(f"  ❤️  Health Drinks   : {hd}")
-    print(f"  ❤️  Syringes        : {syr}")
-    print(f"  🔫  Handgun Ammo    : {hg}")
-    print(f"  🔫  Shotgun Ammo    : {sg}")
-    print(f"  🔫  Rifle Ammo      : {rf}")
-    print(f"  🪚  Melee Weapon    : {wpn}")
-    print(f"  ⚔️  Pyramid Head    : {ph}")
-    print(f"  👻  All Enemies     : {enemies}")
-    print(f"  📖  Lost Memories   : {book}")
-    print("-" * 50)
-
-def interactive_cli(save_path):
-    opt_ammo = True
-    opt_health = True
-    opt_chainsaw = True
-    opt_pacify_ph = False
-    opt_pacify_all = False
-    opt_inject_book = False
+def sub_menu_custom_injections():
+    custom_items = []
+    custom_memos = []
+    custom_glimpses = []
 
     while True:
         print("\n" + "=" * 52)
-        print("   🎮 SILENT HILL 2 REMAKE — SAVE CHEAT TOOL")
+        print("   🔍 CUSTOM ITEM / MEMO / GLIMPSE INJECTOR")
+        print("=" * 52)
+        print("SELECT INJECTION TYPE:")
+        print("  [1] Inject Specific Ending Pack (Rebirth, Dog, UFO, Bliss, Stillness)")
+        print("  [2] Select Individual Memo from Catalog (70 available)")
+        print("  [3] Select Individual Glimpse from Catalog (26 available)")
+        print("  [4] Type Exact Item Row Name to Inject")
+        print("  [5] Type Exact Memo Row Name to Inject")
+        print("  [B] Back to Main Menu")
+        print("-" * 52)
+        if custom_items or custom_memos or custom_glimpses:
+            print("QUEUED CUSTOM INJECTIONS:")
+            for i, q in custom_items:
+                print(f"  • Item: {i} (x{q})")
+            for m in custom_memos:
+                print(f"  • Memo: {m}")
+            for g in custom_glimpses:
+                print(f"  • Glimpse: {g}")
+            print("-" * 52)
+
+        try:
+            ch = input("Select an option [B]: ").strip().upper()
+        except (KeyboardInterrupt, EOFError):
+            break
+
+        if ch in ("", "B"):
+            break
+        elif ch == "1":
+            print("\nSelect Ending Pack:")
+            cats = list(ENDING_ITEMS.keys())
+            for idx, c in enumerate(cats, 1):
+                print(f"  [{idx}] {c}")
+            sel = input("Enter choice: ").strip()
+            if sel.isdigit() and 1 <= int(sel) <= len(cats):
+                chosen_cat = cats[int(sel)-1]
+                for item_id, item_label in ENDING_ITEMS[chosen_cat]:
+                    custom_items.append((item_id, 1))
+                print(f"✅ Added items for {chosen_cat}")
+        elif ch == "2":
+            filter_str = input("\nEnter search filter for memos (or press Enter for all): ").strip().lower()
+            filtered = [m for m in ALL_MEMOS if filter_str in m.lower()]
+            for idx, m in enumerate(filtered[:20], 1):
+                print(f"  [{idx}] {m}")
+            if len(filtered) > 20:
+                print(f"  ... ({len(filtered)-20} more, refine search)")
+            sel = input("Select memo index (or 0 to cancel): ").strip()
+            if sel.isdigit() and 1 <= int(sel) <= min(20, len(filtered)):
+                custom_memos.append(filtered[int(sel)-1])
+                print(f"✅ Queued memo: {filtered[int(sel)-1]}")
+        elif ch == "3":
+            print("\nGlimpses Catalog (1-26):")
+            for idx, (guid, desc) in enumerate(ALL_GLIMPSES, 1):
+                print(f"  [{idx:02d}] {desc}")
+            sel = input("Select glimpse index (1-26): ").strip()
+            if sel.isdigit() and 1 <= int(sel) <= len(ALL_GLIMPSES):
+                custom_glimpses.append(ALL_GLIMPSES[int(sel)-1][0])
+                print(f"✅ Queued: {ALL_GLIMPSES[int(sel)-1][1]}")
+        elif ch == "4":
+            name = input("\nEnter exact item row name: ").strip()
+            if name:
+                qty_str = input("Enter quantity [1]: ").strip()
+                qty = int(qty_str) if qty_str.isdigit() and int(qty_str) > 0 else 1
+                custom_items.append((name, qty))
+                print(f"✅ Queued item: {name} (x{qty})")
+        elif ch == "5":
+            name = input("\nEnter exact memo row name: ").strip()
+            if name:
+                custom_memos.append(name)
+                print(f"✅ Queued memo: {name}")
+
+    return custom_items, custom_memos, custom_glimpses
+
+def interactive_cli(save_path):
+    opt_ammo = False
+    opt_health = False
+    opt_max_hp = False
+    opt_chainsaw = False
+    opt_all_memos = False
+    opt_all_glimpses = False
+    opt_all_endings = False
+    opt_all_photos = False
+
+    queued_items = []
+    queued_memos = []
+    queued_glimpses = []
+
+    while True:
+        print("\n" + "=" * 52)
+        print("   🎮 SILENT HILL 2 REMAKE — SAVE CHEAT & INJECTOR")
         print("=" * 52)
         print_status(save_path)
 
-        print("TOGGLE CHEATS:")
-        print(f"  [1] Infinite Ammo (9,999)      : [{'ON' if opt_ammo else 'OFF'}]")
-        print(f"  [2] Infinite Health Items (999): [{'ON' if opt_health else 'OFF'}]")
-        print(f"  [3] NG+ Chainsaw Weapon        : [{'ON' if opt_chainsaw else 'OFF'}]")
-        print(f"  [4] Pacify Pyramid Head        : [{'ON' if opt_pacify_ph else 'OFF'}]")
-        print(f"  [5] Pacify All Enemies (Ignore): [{'ON' if opt_pacify_all else 'OFF'}]")
-        print(f"  [6] Inject Book of Lost Memories : [{'ON' if opt_inject_book else 'OFF'}]")
+        print("SELECT CHEATS & INJECTIONS (All OFF by default):")
+        print(f"  [1] Max Ammo (9,999 Handgun, Shotgun, Rifle) : [{'ON' if opt_ammo else 'OFF'}]")
+        print(f"  [2] Max Healing Items (999 Drinks, Syringes) : [{'ON' if opt_health else 'OFF'}]")
+        print(f"  [3] Full Player Health (100% HP)             : [{'ON' if opt_max_hp else 'OFF'}]")
+        print(f"  [4] Equip NG+ Chainsaw                       : [{'ON' if opt_chainsaw else 'OFF'}]")
+        print(f"  [5] Inject All Memos (100% Archivist - 70)   : [{'ON' if opt_all_memos else 'OFF'}]")
+        print(f"  [6] Inject All Glimpses of the Past (26/26)  : [{'ON' if opt_all_glimpses else 'OFF'}]")
+        print(f"  [7] Inject All Key & Ending Items (All 8)    : [{'ON' if opt_all_endings else 'OFF'}]")
+        print(f"  [8] Inject All Strange Photos (26/26)        : [{'ON' if opt_all_photos else 'OFF'}]")
+        print(f"  [9] Custom Item / Memo / Glimpse Selector... ({len(queued_items) + len(queued_memos) + len(queued_glimpses)} queued)")
         print("\nACTIONS:")
-        print("  [A] Apply to Save (Press Enter)")
+        print("  [A] Apply Selected Cheats to Save")
         print("  [R] Restore Latest Backup")
         print("  [Q] Quit")
         print("-" * 52)
@@ -429,20 +703,42 @@ def interactive_cli(save_path):
             sys.exit(0)
 
         if choice in ("", "A"):
-            apply_cheats(save_path, ammo=opt_ammo, health=opt_health, chainsaw=opt_chainsaw, pacify_ph=opt_pacify_ph, pacify_all=opt_pacify_all, inject_book=opt_inject_book)
+            apply_cheats(
+                save_path,
+                ammo=opt_ammo,
+                health=opt_health,
+                max_hp=opt_max_hp,
+                chainsaw=True if opt_chainsaw else None,
+                all_memos=opt_all_memos,
+                all_glimpses=opt_all_glimpses,
+                all_endings=opt_all_endings,
+                all_photos=opt_all_photos,
+                custom_items=queued_items,
+                custom_memos=queued_memos,
+                custom_glimpses=queued_glimpses,
+            )
             break
         elif choice == "1":
             opt_ammo = not opt_ammo
         elif choice == "2":
             opt_health = not opt_health
         elif choice == "3":
-            opt_chainsaw = not opt_chainsaw
+            opt_max_hp = not opt_max_hp
         elif choice == "4":
-            opt_pacify_ph = not opt_pacify_ph
+            opt_chainsaw = not opt_chainsaw
         elif choice == "5":
-            opt_pacify_all = not opt_pacify_all
+            opt_all_memos = not opt_all_memos
         elif choice == "6":
-            opt_inject_book = not opt_inject_book
+            opt_all_glimpses = not opt_all_glimpses
+        elif choice == "7":
+            opt_all_endings = not opt_all_endings
+        elif choice == "8":
+            opt_all_photos = not opt_all_photos
+        elif choice == "9":
+            items, memos, glimpses = sub_menu_custom_injections()
+            queued_items.extend(items)
+            queued_memos.extend(memos)
+            queued_glimpses.extend(glimpses)
         elif choice == "R":
             restore_latest_backup()
             break
@@ -451,18 +747,29 @@ def interactive_cli(save_path):
             break
 
 def main():
-    parser = argparse.ArgumentParser(description="Silent Hill 2 Save Cheat CLI")
+    parser = argparse.ArgumentParser(description="Silent Hill 2 Save Cheat & Item Injector CLI")
     parser.add_argument("--save", "-s", help="Target specific .sav file")
     parser.add_argument("--dir", "-d", default=DEFAULT_SAVE_DIR, help="Save directory")
-    parser.add_argument("--apply", "-a", action="store_true", help="Apply cheats immediately and exit")
     parser.add_argument("--status", action="store_true", help="Print save status and exit")
     parser.add_argument("--restore", "-r", action="store_true", help="Restore latest backup and exit")
-    parser.add_argument("--no-ammo", action="store_true", help="Do not touch ammo")
-    parser.add_argument("--no-health", action="store_true", help="Do not touch health items")
-    parser.add_argument("--no-chainsaw", action="store_true", help="Revert to Iron Pipe")
-    parser.add_argument("--pacify-ph", action="store_true", help="Pacify Pyramid Head")
-    parser.add_argument("--pacify-all", action="store_true", help="Pacify all enemies in current area")
-    parser.add_argument("--inject-book", action="store_true", help="Inject Book of Lost Memories into save")
+
+    # Cheats
+    parser.add_argument("--ammo", action="store_true", help="Set 9,999 ammo for Handgun, Shotgun, Rifle")
+    parser.add_argument("--health", action="store_true", help="Set 999 Health Drinks and Syringes")
+    parser.add_argument("--max-hp", action="store_true", help="Restore player HP to 100%%")
+    parser.add_argument("--chainsaw", action="store_true", help="Equip NG+ Chainsaw")
+    parser.add_argument("--pipe", action="store_true", help="Revert melee weapon to Iron Pipe")
+
+    # Bulk Injections
+    parser.add_argument("--all-memos", action="store_true", help="Inject all 70 Memos (100%% Archivist)")
+    parser.add_argument("--all-glimpses", action="store_true", help="Inject all 26 Glimpses of the Past (100%% Echoes)")
+    parser.add_argument("--all-endings", action="store_true", help="Inject all Key & Ending Items for all 8 endings")
+    parser.add_argument("--all-photos", action="store_true", help="Inject all 26 Strange Photos")
+
+    # Individual / Custom Injections
+    parser.add_argument("--inject-memo", action="append", help="Inject specific memo by row name")
+    parser.add_argument("--inject-glimpse", action="append", help="Inject specific glimpse by index (1-26) or 32-char GUID")
+    parser.add_argument("--inject-item", nargs=2, action="append", metavar=("NAME", "QTY"), help="Inject any item row name and quantity")
 
     args = parser.parse_args()
 
@@ -475,29 +782,50 @@ def main():
         restore_latest_backup(args.dir)
     elif args.status:
         print_status(save_path)
-    elif args.inject_book and not args.apply:
-        # Standalone book injection without modifying existing player ammo/health/weapons
-        apply_cheats(
-            save_path,
-            ammo=False,
-            health=False,
-            chainsaw=None,
-            pacify_ph=None,
-            pacify_all=None,
-            inject_book=True
-        )
-    elif args.apply or args.no_ammo or args.no_health or args.no_chainsaw or args.pacify_ph or args.pacify_all:
-        apply_cheats(
-            save_path,
-            ammo=not args.no_ammo,
-            health=not args.no_health,
-            chainsaw=not args.no_chainsaw,
-            pacify_ph=args.pacify_ph,
-            pacify_all=args.pacify_all,
-            inject_book=args.inject_book
-        )
     else:
-        interactive_cli(save_path)
+        # Check if any CLI action flag was provided
+        has_cli_action = (
+            args.ammo or args.health or args.max_hp or args.chainsaw or args.pipe or
+            args.all_memos or args.all_glimpses or args.all_endings or args.all_photos or
+            args.inject_memo or args.inject_glimpse or args.inject_item
+        )
+
+        if has_cli_action:
+            custom_items = []
+            if args.inject_item:
+                for iname, iqty in args.inject_item:
+                    custom_items.append((iname, int(iqty)))
+
+            custom_glimpses = []
+            if args.inject_glimpse:
+                for g in args.inject_glimpse:
+                    if g.isdigit() and 1 <= int(g) <= len(ALL_GLIMPSES):
+                        custom_glimpses.append(ALL_GLIMPSES[int(g)-1][0])
+                    else:
+                        custom_glimpses.append(g)
+
+            chainsaw_opt = None
+            if args.chainsaw:
+                chainsaw_opt = True
+            elif args.pipe:
+                chainsaw_opt = False
+
+            apply_cheats(
+                save_path,
+                ammo=args.ammo,
+                health=args.health,
+                max_hp=args.max_hp,
+                chainsaw=chainsaw_opt,
+                all_memos=args.all_memos,
+                all_glimpses=args.all_glimpses,
+                all_endings=args.all_endings,
+                all_photos=args.all_photos,
+                custom_items=custom_items,
+                custom_memos=args.inject_memo,
+                custom_glimpses=custom_glimpses,
+            )
+        else:
+            interactive_cli(save_path)
 
 if __name__ == "__main__":
     main()
