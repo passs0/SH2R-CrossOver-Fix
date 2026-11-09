@@ -42,8 +42,9 @@ On Apple Silicon Macs (such as M2 Pro / M3), two compounding issues can trap the
 - Enforces `"CX_GRAPHICS_BACKEND" = "d3dmetal"` in `cxbottle.conf` to utilize Apple's official Game Porting Toolkit (GPTK) Metal translation layer.
 - Locks `GameUserSettings.ini` to read-only (`chmod 444`) with **Medium/Low preset** and **Low Shadows** (`sg.ShadowQuality=0`), preventing UE5's startup benchmark from resetting to unplayable Epic 100% settings.
 - Targets a console-style stable **30 FPS cap with VSync enabled**: because the M2 Pro GPU never dips below the 33.3ms threshold on Medium/Low, VSync locks smoothly to 30 FPS without tearing and without dropping to 20 FPS.
-- Injects clean post-processing overrides into `Engine.ini`:
+- Injects clean post-processing and memory-capping overrides into `Engine.ini`:
   - `r.VSync=1` — Synchronizes presentation with zero screen tearing.
+  - `r.Streaming.PoolSize=3072` & `r.Streaming.LimitPoolSizeToVRAM=1` — Caps texture streaming memory strictly to 3 GB, preventing runaway RAM exhaustion and macOS SSD swap thrashing that causes framerates to collapse into single digits over time.
   - `r.SceneColorFringe.Max=0` & `r.SceneColorFringeQuality=0` — Completely disables chromatic aberration color-channel separation (fixing unblurred red, green, and blue fringing artifacts).
   - `r.VolumetricFog.GridPixelSizeFactor=16` — Halves volumetric fog shader overhead in outdoor town sections.
   - `r.DepthOfFieldQuality=0` & `r.motionblurquality=0` — Eliminates heavy blur passes that bottleneck the GPU.

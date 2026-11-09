@@ -152,6 +152,8 @@ data = data.replace("(\"Adv_EffectsQuality\", 2)", "(\"Adv_EffectsQuality\", 1)"
 data = data.replace("(\"Adv_ShadersQuality\", 2)", "(\"Adv_ShadersQuality\", 1)")
 data = data.replace("(\"Adv_Quality\", 2)", "(\"Adv_Quality\", 1)")
 data = data.replace("(\"Adv_LensFlares\", 2)", "(\"Adv_LensFlares\", 0)")
+data = data.replace("(\"Adv_TextureQuality\", 2)", "(\"Adv_TextureQuality\", 1)")
+data = data.replace("sg.TextureQuality=2", "sg.TextureQuality=1")
 
 with open(p, "wb") as f:
     f.write(data.encode("utf-8"))
@@ -174,6 +176,7 @@ text = text.replace("<OPTION Name=\"Adv_ShadowQuality\" Registered=\"True\" Type
 text = text.replace("<OPTION Name=\"Adv_EffectsQuality\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_EffectsQuality\" Registered=\"True\" Type=\"Integer\" Value=\"1\">")
 text = text.replace("<OPTION Name=\"Adv_ShadersQuality\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_ShadersQuality\" Registered=\"True\" Type=\"Integer\" Value=\"1\">")
 text = text.replace("<OPTION Name=\"Adv_LensFlares\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_LensFlares\" Registered=\"True\" Type=\"Integer\" Value=\"0\">")
+text = text.replace("<OPTION Name=\"Adv_TextureQuality\" Registered=\"True\" Type=\"Integer\" Value=\"2\">", "<OPTION Name=\"Adv_TextureQuality\" Registered=\"True\" Type=\"Integer\" Value=\"1\">")
 with open(p, "wb") as f:
     f.write(text.encode("utf-16"))
 ' "$XML_SETTINGS"
@@ -193,7 +196,7 @@ if "[OnlineSubsystem]" not in data:
     data += "\r\n[OnlineSubsystem]\r\nDefaultPlatformService=Null\r\nbAutoLogin=true\r\n\r\n[OnlineSubsystemSteam]\r\nbEnabled=false\r\n\r\n[OnlineSubsystemGOG]\r\nbEnabled=false\r\nbRequireBackendAuthorization=false\r\n"
 
 data = re.sub(r"\[SystemSettings\][\r\n]+(?:[^\r\n\[]+[\r\n]+)*", "", data)
-data += "\r\n[SystemSettings]\r\nr.VSync=1\r\nr.VolumetricFog.GridPixelSizeFactor=16\r\nr.DepthOfFieldQuality=0\r\nr.motionblurquality=0\r\nr.SceneColorFringe.Max=0\r\nr.SceneColorFringeQuality=0\r\nr.FilmGrain=0\r\n"
+data += "\r\n[SystemSettings]\r\nr.VSync=1\r\nr.VolumetricFog.GridPixelSizeFactor=16\r\nr.DepthOfFieldQuality=0\r\nr.motionblurquality=0\r\nr.SceneColorFringe.Max=0\r\nr.SceneColorFringeQuality=0\r\nr.FilmGrain=0\r\nr.Streaming.PoolSize=3072\r\nr.Streaming.LimitPoolSizeToVRAM=1\r\nr.Streaming.DefragDynamicBounds=1\r\nr.Streaming.HLODStrategy=2\r\nr.Streaming.FullyLoadUsedTextures=0\r\nr.Streaming.MaxTempMemoryAllowed=64\r\n"
 
 with open(p, "wb") as f:
     f.write(data.encode("utf-8"))
