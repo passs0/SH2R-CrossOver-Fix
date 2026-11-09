@@ -4,6 +4,17 @@ Silent Hill 2 Remake - Save Cheat & Item Injector CLI
 A clean, modular offline save modifier to inspect, toggle cheats, and inject any
 memo, glimpse of the past, ending item, weapon, or arbitrary game item.
 Includes Progression Protection Guard to prevent level streaming crashes.
+
+⚠️  DISCLAIMER & STABILITY WARNING:
+Unreal Engine 5 uses asynchronous level streaming. If a save contains key items,
+zone-specific memos, or puzzle objects belonging to areas that have not been loaded
+or streamed into memory yet (e.g. Prison or Lakeview Hotel items in Brookhaven Hospital),
+the game engine will dereference null pointers (EXCEPTION_ACCESS_VIOLATION 0x142ac006e)
+and crash immediately upon loading the save file!
+
+The built-in Progression Guard is enabled by default to automatically filter all
+injections to safe limits matching your save's current progression tier.
+Injecting items ahead of your story progress with --no-guard WILL cause game crashes!
 """
 
 import sys
@@ -875,6 +886,10 @@ def interactive_cli(save_path):
         print("\n" + "=" * 52)
         print("   🎮 SILENT HILL 2 REMAKE — SAVE CHEAT & INJECTOR")
         print("=" * 52)
+        print("⚠️  STABILITY NOTICE: Injecting items/memos ahead of your")
+        print("    story zone causes UE5 level streaming crashes.")
+        print("    Keep Progression Guard [ON] for crash-safe saves!")
+        print("=" * 52)
         print_status(save_path)
 
         print("SELECT CHEATS & INJECTIONS (All OFF by default):")
@@ -954,6 +969,13 @@ def interactive_cli(save_path):
 def main():
     parser = argparse.ArgumentParser(
         description="Silent Hill 2 Save Cheat & Item Injector CLI",
+        epilog="""⚠️  DISCLAIMER & STABILITY WARNING:
+Unreal Engine 5 level streaming dereferences null pointers (EXCEPTION_ACCESS_VIOLATION 0x142ac006e)
+if James holds key items, memos, or puzzle objects belonging to areas that have not yet been streamed
+into memory (e.g. Prison or Lakeview Hotel items in Brookhaven Hospital).
+The Progression Guard is enabled by default to filter injections to your current zone tier.
+Injecting items ahead of your story progress with --no-guard WILL cause game crashes upon loading!
+""",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--save", "-s", type=str, help="Target specific .sav file")

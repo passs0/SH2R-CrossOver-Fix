@@ -40,12 +40,14 @@ On Apple Silicon Macs (such as M2 Pro / M3), two compounding issues can trap the
 
 **How `SH2R-CrossOver-Fix` solves it:**
 - Enforces `"CX_GRAPHICS_BACKEND" = "d3dmetal"` in `cxbottle.conf` to utilize Apple's official Game Porting Toolkit (GPTK) Metal translation layer.
-- Enforces an authoritative **1080×702** display resolution (exact 1.538 aspect ratio matching the MacBook display) via launch arguments (`-ResX=1080 -ResY=702`) and `Engine.ini` (`r.SetRes=1080x702wf`), cutting fill-rate load by 64% compared to native 1800p and preventing the game from reverting.
-- Configures Borderless Fullscreen (`FullscreenMode=1` / `r.SetRes=1080x702wf`) to automatically fill the macOS display on boot without manual resolution toggling.
+- Enforces an authoritative **720P** (`1280×720`) display resolution with aggressive TSR upscaling (`r.ScreenPercentage=75`) via launch arguments (`-ResX=1280 -ResY=720`) and `Engine.ini` (`r.SetRes=1280x720wf`), cutting GPU fill-rate load by over 70% compared to native 1800p and preventing the game from reverting.
+- Configures Borderless Fullscreen (`FullscreenMode=1` / `r.SetRes=1280x720wf`) to automatically fill the macOS display on boot without manual resolution toggling.
+- Customizable resolution via environment variables: run `RES_X=1108 RES_Y=720 ./install.sh` for exact 16:10 MacBook ratio or `RES_X=1280 RES_Y=720 ./install.sh` for standard 720p.
 - Locks `GameUserSettings.ini` to read-only (`chmod 444`) with **Medium/Low preset** and **Low Shadows** (`sg.ShadowQuality=0`), preventing UE5's startup benchmark from resetting to unplayable Epic settings.
-- Targets a console-style stable **30 FPS cap with VSync enabled**: on 1080×702, the M2 Pro maintains smooth 30 FPS headroom even in the dense Toluca Lake volumetric fog.
+- Targets a console-style stable **30 FPS cap with VSync enabled**: on 720p with 75% TSR scaling, Apple Silicon maintains smooth 30 FPS headroom even during intensive combat and dense volumetric fog.
 - Injects clean post-processing and memory-capping overrides into `Engine.ini`:
-  - `r.SetRes=1080x702wf` — Locks viewport resolution to 1080×702 borderless fullscreen.
+  - `r.SetRes=1280x720wf` — Locks viewport resolution to 1280×720 borderless fullscreen.
+  - `r.ScreenPercentage=75` — Reconstructs internal 540p render buffer to 720p with clean TSR anti-aliasing.
   - `r.VSync=1` — Synchronizes presentation with zero screen tearing.
   - `r.Streaming.PoolSize=3072` & `r.Streaming.LimitPoolSizeToVRAM=1` — Caps texture streaming memory strictly to 3 GB, preventing runaway RAM exhaustion and macOS SSD swap thrashing that causes framerates to collapse into single digits over time.
   - `r.VolumetricFog.GridPixelSizeFactor=16` & `r.VolumetricFog.GridSizeZ=64` — Halves volumetric fog voxel passes and depth slices in heavy outdoor town and lake sections.
@@ -105,6 +107,7 @@ Windows memory trainers (*Cheat Engine*, *FLiNG*, *WeMod*) often fail, crash, or
 Included in [`scripts/sh2_cheat.py`](scripts/sh2_cheat.py) is a **standalone, zero-dependency offline save modifier and item injector** written in pure Python 3. It directly parses Unreal Engine 5's compressed `VASb` / `YDBx` GVAS save container and repacks it cleanly while preserving exact byte alignment and generating automatic timestamped backups.
 
 ### Features
+- 🛡️ **Progression Protection Guard**: Unreal Engine 5 uses asynchronous level streaming. Injecting key items or memos belonging to zones that haven't been streamed into memory yet (e.g. Prison or Lakeview Hotel items into Brookhaven Hospital) causes fatal `EXCEPTION_ACCESS_VIOLATION` crashes (`0x142ac006e`). The built-in Progression Guard automatically filters injections to safe limits for your current story tier.
 - 🔫 **Infinite Ammo**: Sets Handgun, Shotgun, and Hunting Rifle ammo to 9,999.
 - ❤️ **Infinite Healing**: Sets Health Drinks and Syringes to 999; restores player HP to 100%.
 - 🪚 **NG+ Chainsaw Early Access**: Safely equip the Chainsaw in inventory or revert to the Iron Pipe.
